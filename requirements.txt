@@ -1,0 +1,10 @@
+numpy>=1.26
+scipy>=1.11
+matplotlib>=3.8
+scikit-learn>=1.4
+librosa>=0.10
+soundfile>=0.12
+torch>=2.2
+musdb>=0.4
+museval>=0.4
+pytorch-msssim>=1.0
