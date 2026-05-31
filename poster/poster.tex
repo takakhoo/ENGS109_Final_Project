@@ -1,22 +1,24 @@
 % Landscape A0 conference poster (beamerposter), dense three-column technical layout.
 \documentclass[final,17pt]{beamer}
-\usepackage[orientation=landscape,size=a0,scale=1.25]{beamerposter}
+\usepackage[orientation=landscape,size=a0,scale=1.22]{beamerposter}
 \usepackage{amsmath,amssymb,bm,mathtools}
 \usepackage{booktabs}
 \usepackage{graphicx}
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta,positioning,fit,backgrounds,calc}
 \usepackage{xcolor}
+\usepackage{colortbl}
 
 \graphicspath{{../figures/}}
 
-% ---------- Colour palette (Dartmouth green + accent) ----------
+% ---------- Colour palette ----------
 \definecolor{dgreen}{HTML}{0B4F2F}
 \definecolor{dgreenL}{HTML}{E8F0EC}
 \definecolor{accent}{HTML}{B5651D}
-\definecolor{accentL}{HTML}{F7ECDF}
+\definecolor{accentL}{HTML}{F9EFE3}
 \definecolor{purpleA}{HTML}{7A1F8B}
 \definecolor{ink}{HTML}{1A1A1A}
+\definecolor{rule}{HTML}{C9D6CF}
 
 % ---------- Block theme ----------
 \setbeamercolor{block title}{fg=white,bg=dgreen}
@@ -24,21 +26,29 @@
 \setbeamercolor{block alerted title}{fg=white,bg=accent}
 \setbeamercolor{block alerted body}{fg=ink,bg=accentL}
 \setbeamerfont{block title}{size=\large,series=\bfseries}
+\setbeamerfont{block alerted title}{size=\large,series=\bfseries}
 \setbeamertemplate{block begin}{
-  \begin{beamercolorbox}[colsep*=0ex,dp=0.4ex,center]{block title}
+  \begin{beamercolorbox}[colsep*=0ex,dp=0.5ex,leftskip=1ex,rightskip=1ex]{block title}
     \vskip0.4ex\insertblocktitle\vskip0.4ex\end{beamercolorbox}
-  {\parskip0pt\par}\vskip-0.5ex
-  \begin{beamercolorbox}[colsep*=0ex,vmode]{block body}\vskip0.6ex}
-\setbeamertemplate{block end}{\vskip0.4ex\end{beamercolorbox}\vskip1.2ex}
+  {\parskip0pt\par}\vskip-0.4ex
+  \begin{beamercolorbox}[colsep*=0ex,vmode,leftskip=1ex,rightskip=1ex]{block body}\vskip0.8ex}
+\setbeamertemplate{block end}{\vskip0.8ex\end{beamercolorbox}\vskip1.3ex}
 \setbeamertemplate{block alerted begin}{
-  \begin{beamercolorbox}[colsep*=0ex,dp=0.4ex,center]{block alerted title}
+  \begin{beamercolorbox}[colsep*=0ex,dp=0.5ex,leftskip=1ex,rightskip=1ex]{block alerted title}
     \vskip0.4ex\insertblocktitle\vskip0.4ex\end{beamercolorbox}
-  {\parskip0pt\par}\vskip-0.5ex
-  \begin{beamercolorbox}[colsep*=0ex,vmode]{block alerted body}\vskip0.6ex}
-\setbeamertemplate{block alerted end}{\vskip0.4ex\end{beamercolorbox}\vskip1.2ex}
+  {\parskip0pt\par}\vskip-0.4ex
+  \begin{beamercolorbox}[colsep*=0ex,vmode,leftskip=1ex,rightskip=1ex]{block alerted body}\vskip0.8ex}
+\setbeamertemplate{block alerted end}{\vskip0.8ex\end{beamercolorbox}\vskip1.3ex}
 \setbeamertemplate{navigation symbols}{}
 \setbeamertemplate{caption}[numbered]
 \setbeamercolor{caption name}{fg=dgreen}
+
+% ---------- Pretty bullets ----------
+\setbeamertemplate{itemize item}{\small\color{dgreen}$\blacktriangleright$}
+\setbeamertemplate{itemize subitem}{\footnotesize\color{accent}$\bullet$}
+\setbeamercolor{itemize item}{fg=dgreen}
+\newcommand{\lead}[1]{\textbf{\color{dgreen}#1}}
+\newcommand{\leadA}[1]{\textbf{\color{accent}#1}}
 
 \newcommand{\norm}[1]{\lVert#1\rVert}
 \DeclareMathOperator*{\argmin}{arg\,min}
@@ -49,29 +59,25 @@
 \newcommand{\R}{\mathbb{R}}
 
 \newlength{\sepwidth}\newlength{\colwidth}
-\setlength{\sepwidth}{0.025\paperwidth}
-\setlength{\colwidth}{0.30\paperwidth}
+\setlength{\sepwidth}{0.022\paperwidth}
+\setlength{\colwidth}{0.305\paperwidth}
 \newcommand{\separatorcolumn}{\begin{column}{\sepwidth}\end{column}}
-
-% ---------- Title ----------
-\title{Sparse, Low-Rank, and Deep:\\A Unified Compressed-Sensing Framework for Music Source Separation}
-\author{Taka Khoo}
-\institute{Thayer School of Engineering, Dartmouth College}
 
 % Custom title header bar.
 \setbeamertemplate{headline}{
   \begin{beamercolorbox}[wd=\paperwidth]{block title}
-  \vskip1.2ex
+  \vskip1.0ex
   \begin{columns}
-    \begin{column}{0.05\paperwidth}\end{column}
-    \begin{column}{0.88\paperwidth}\centering
-      \color{white}{\veryHuge\textbf{Sparse, Low-Rank, and Deep}}\\[0.4ex]
-      {\Large A Unified Compressed-Sensing Framework for Music Source Separation}\\[0.6ex]
-      {\large Taka Khoo \quad$\cdot$\quad Thayer School of Engineering, Dartmouth College}
+    \begin{column}{0.04\paperwidth}\end{column}
+    \begin{column}{0.92\paperwidth}\centering
+      \color{white}{\veryHuge\textbf{Sparse, Low-Rank, and Deep}}\\[0.3ex]
+      {\LARGE A Unified Compressed-Sensing Framework for Music Source Separation}\\[0.5ex]
+      {\large Taka Khoo \quad$\bullet$\quad Thayer School of Engineering, Dartmouth College
+      \quad$\bullet$\quad ENGS 109}
     \end{column}
-    \begin{column}{0.05\paperwidth}\end{column}
+    \begin{column}{0.04\paperwidth}\end{column}
   \end{columns}
-  \vskip1.2ex
+  \vskip1.0ex
   \end{beamercolorbox}
 }
 
@@ -80,160 +86,163 @@
 \begin{columns}[t]
 \separatorcolumn
 
-% ================= COLUMN 1 =================
+% ================= COLUMN 1 : PROBLEM + INTUITION + THEORY =================
 \begin{column}{\colwidth}
 
-\begin{alertblock}{Problem \& Contribution}
-\textbf{Music source separation} recovers stems (vocals, accompaniment) from a
-single mixture. Classical decompositions and large neural networks are usually
-treated as separate worlds. \textbf{We show they are points on one axis:
-recovery of structured (sparse / low-rank) spectrogram representations.}
-\begin{itemize}
-\item Four separators on a shared STFT front end: low-rank+sparse, supervised
-NMF, discriminative K-SVD, and a \textbf{deep unrolled sparse coder}.
-\item The deep sparse coder is the \textbf{strongest non-oracle separator and
-the fastest learned model}.
-\item Honest \textbf{coherence analysis}: where the recovery theory binds and
-where it goes slack.
-\end{itemize}
+\begin{alertblock}{The Problem in One Sentence}
+Given only a finished song, recover its hidden tracks, the \leadA{vocals} and the
+\leadA{accompaniment}, that were summed together when it was mixed.
+\vskip0.4ex
+This is hard because mixing destroys information: countless track pairs add up to
+the exact same song. We need a \textbf{prior} that says which split is plausible.
 \end{alertblock}
 
-\begin{block}{The structured-recovery view}
-On the magnitude STFT $\bm{M}=|\STFT(y)|$: vocals are \textbf{sparse} on a
-formant scaffold; accompaniment is \textbf{low-rank} (sustained harmony).
+\begin{block}{Intuition: a song is a picture of sound}
+\begin{itemize}
+\item \lead{Spectrogram.} The short-time Fourier transform turns audio into an
+image: time on the $x$-axis, pitch on the $y$-axis, brightness = energy.
+\item \lead{Vocals are sparse.} A singing voice lights up only a few horizontal
+harmonic lines per instant, most of the image is dark.
+\item \lead{Accompaniment is low-rank.} Repeating chords and drums make the
+background a sum of a few recurring patterns.
+\end{itemize}
+\vskip0.3ex
+\textbf{Sparse} and \textbf{low-rank} are exactly the structures that
+\textbf{compressed sensing} knows how to recover, so the same math that
+reconstructs MRI and photographs from few measurements applies to audio.
+\end{block}
+
+\begin{block}{The structure each method exploits}
 \begin{figure}
 \includegraphics[width=\linewidth]{fig_triptych.pdf}
-\caption{Mixture vs.\ vocals vs.\ accompaniment. The structure each method exploits.}
+\caption{Mixture (left), the vocal track (center, sparse harmonic scaffold), and the
+accompaniment (right, denser and low-rank). Our methods reverse the sum.}
 \end{figure}
 \end{block}
 
-\begin{block}{Preliminaries: when does recovery hold?}
-For $\bm{y}=\bm{A}\bm{x}$, $\bm{x}$ $s$-sparse, the convex program
-$\min\norm{\bm{z}}_1$ s.t. $\bm{A}\bm{z}=\bm{y}$ recovers $\bm{x}$ under any of:
-\[ \spark(\bm{A})>2s, \qquad \delta_{2s}<\sqrt2-1, \qquad
-s<\tfrac12\!\left(1+\tfrac1{\mu(\bm{A})}\right). \]
-RIP: $(1-\delta_s)\norm{\bm{x}}_2^2\le\norm{\bm{A}\bm{x}}_2^2\le(1+\delta_s)\norm{\bm{x}}_2^2$.
-Coherence $\mu(\bm{A})=\max_{i\ne j}|\langle\bm{a}_i,\bm{a}_j\rangle|$.
-Random $\bm{A}$ needs $m\ge C\,s\log(N/s)$ measurements.
-\vskip0.5ex
-\textbf{Low-rank:} nuclear norm $\norm{\bm{X}}_*=\sum_i\sigma_i$ is the convex
-surrogate for rank; principal component pursuit splits $\bm{M}=\bm{X}+\bm{E}$.
-\end{block}
-
-\begin{block}{Joint sparsity for stereo (MMV)}
-Stereo channels share active sources, so their codes share a \textbf{row support}.
-Stack per-frame channel spectra into $\bm{Y}=[\bm{y}_L\ \bm{y}_R]$ and run
-\textbf{simultaneous OMP}, scoring atoms by the row norm
-$\norm{(\bm{D}^\top\bm{R})_{n,:}}_2$ so both channels agree on active atoms.
-Mixed-norm surrogate $\norm{\bm{X}}_{1,2}=\sum_n\norm{\bm{X}_{n,:}}_2$.
-Shared support \emph{improves} identifiability:
-\[ s<\tfrac12\big(\spark(\bm{A})-1+\mathrm{rank}(\bm{Y})\big). \]
+\begin{block}{When is recovery guaranteed?}
+For $\bm{y}=\bm{A}\bm{x}$ with $\bm{x}$ $s$-sparse, the convex program
+$\min\norm{\bm{z}}_1$ s.t.\ $\bm{A}\bm{z}=\bm{y}$ returns $\bm{x}$ exactly under
+\emph{any} of three conditions:
+\[ \underbrace{\spark(\bm{A})>2s}_{\text{uniqueness}},\quad
+   \underbrace{\delta_{2s}<\sqrt2-1}_{\text{RIP}},\quad
+   \underbrace{s<\tfrac12\!\big(1+\tfrac1{\mu(\bm{A})}\big)}_{\text{coherence}}. \]
+\begin{itemize}
+\item \lead{RIP:} $(1-\delta_s)\norm{\bm{x}}_2^2\le\norm{\bm{A}\bm{x}}_2^2\le(1+\delta_s)\norm{\bm{x}}_2^2$.
+\item \lead{Coherence:} $\mu(\bm{A})=\max_{i\ne j}|\langle\bm{a}_i,\bm{a}_j\rangle|$; random
+$\bm{A}$ needs only $m\!\ge\!Cs\log(N/s)$ rows.
+\item \lead{Low-rank:} nuclear norm $\norm{\bm{X}}_*\!=\!\sum_i\sigma_i$ is the convex
+surrogate for rank.
+\end{itemize}
 \end{block}
 
 \end{column}
 \separatorcolumn
 
-% ================= COLUMN 2 =================
+% ================= COLUMN 2 : METHODS =================
 \begin{column}{\colwidth}
 
-\begin{block}{Unified pipeline}
+\begin{block}{One front end, four separators}
 \centering
 \begin{tikzpicture}[font=\footnotesize,
-  box/.style={draw,rounded corners=2pt,align=center,minimum height=11mm,
-              minimum width=26mm,fill=dgreenL,line width=0.5pt,inner sep=2pt},
-  meth/.style={draw,rounded corners=2pt,align=center,minimum height=9mm,
-               minimum width=34mm,fill=white,line width=0.5pt,inner sep=2pt},
+  box/.style={draw,rounded corners=2pt,align=center,minimum height=10mm,
+              minimum width=24mm,fill=dgreenL,line width=0.5pt,inner sep=2pt},
+  meth/.style={draw,rounded corners=2pt,align=center,minimum height=8.5mm,
+               minimum width=40mm,fill=white,line width=0.5pt,inner sep=2pt},
   ours/.style={meth,fill=accentL,draw=accent,line width=1.2pt},
   arr/.style={-{Stealth[length=2mm]},line width=0.6pt}]
-% top row: front end -> mask -> stems
-\node[box] (in) {Mixture $y(t)$};
-\node[box,right=10mm of in] (stft) {STFT $\bm{M},\angle\bm{Y}$};
-\node[box,right=34mm of stft] (mask) {Soft mask\\$\bm{M}_c\in[0,1]$};
-\node[box,right=10mm of mask] (out) {Stems $\hat y_c$};
+\node[box] (in) {Mixture\\$y(t)$};
+\node[box,right=8mm of in] (stft) {STFT\\$\bm{M},\angle\bm{Y}$};
+\node[box,right=42mm of stft] (mask) {Soft mask\\$\bm{M}_c\!\in\![0,1]$};
+\node[box,right=8mm of mask] (out) {Stems\\$\hat y_c$};
 \draw[arr] (in)--(stft); \draw[arr] (stft)--(mask); \draw[arr] (mask)--(out);
-% method bank between STFT and mask
-\node[meth,below=9mm of stft,xshift=18mm] (rpca) {RPCA: low-rank+sparse};
-\node[meth,below=3mm of rpca] (nmf) {NMF: class dictionaries};
-\node[meth,below=3mm of nmf] (ksvd) {K-SVD + SRC};
-\node[ours,below=3mm of ksvd] (scn) {\textbf{Deep sparse coder (ours)}};
+\node[meth,below=8mm of stft,xshift=22mm] (rpca) {Robust PCA: low-rank + sparse};
+\node[meth,below=2.5mm of rpca] (nmf) {Supervised NMF: class dictionaries};
+\node[meth,below=2.5mm of nmf] (ksvd) {K-SVD + SRC: learned dictionaries};
+\node[ours,below=2.5mm of ksvd] (scn) {\textbf{Deep sparse coder (ours)}};
 \draw[arr] (stft.south) |- (rpca.west);
 \draw[arr] (rpca.east) -| (mask.south);
 \draw[arr] (scn.east) -| ([xshift=3mm]mask.south);
-\end{tikzpicture}
-\\[0.3ex]
-{\footnotesize Four interchangeable separators share one front end; the deep coder
-predicts the mask directly.}
+\end{tikzpicture}\\[0.3ex]
+{\footnotesize Every method outputs a mask $\bm{M}_c$ that keeps a fraction of each
+time-frequency cell; the mixture phase is reused to resynthesize audio.}
 \end{block}
 
 \begin{block}{Classical recovery stages}
-\textbf{Low-rank + sparse (RPCA).} Principal component pursuit,
-\[ \min_{\bm{X},\bm{E}}\ \norm{\bm{X}}_*+\lambda\norm{\bm{E}}_1
-\ \text{s.t.}\ \bm{X}+\bm{E}=\bm{M},\quad \lambda=\tfrac1{\sqrt{\max(F,T)}}, \]
-solved by inexact ALM ($\SVT$ + soft-threshold). Low-rank $\bm{X}$=accompaniment.
+\lead{Robust PCA.} Split the spectrogram into low-rank + sparse:
+\[ \min_{\bm{X},\bm{E}}\norm{\bm{X}}_*+\lambda\norm{\bm{E}}_1
+\ \text{s.t.}\ \bm{X}\!+\!\bm{E}\!=\!\bm{M},\ \lambda\!=\!\tfrac1{\sqrt{\max(F,T)}}. \]
+Low-rank $\bm{X}$ = accompaniment, sparse $\bm{E}$ = voice. No training.
 \vskip0.4ex
-\textbf{Supervised NMF.} Per-source non-negative dictionaries, KL multiplicative
-updates $\bm{H}\!\leftarrow\!\bm{H}\odot\frac{\bm{D}^\top(\bm{M}\oslash\bm{D}\bm{H})}{\bm{D}^\top\bm1}$;
-fix $\bm{D}=[\bm{D}_v|\bm{D}_a]$ at test time.
+\lead{Supervised NMF.} Learn a non-negative dictionary per source; KL
+multiplicative updates
+$\bm{H}\!\leftarrow\!\bm{H}\!\odot\!\frac{\bm{D}^\top(\bm{M}\oslash\bm{D}\bm{H})}{\bm{D}^\top\bm1}$,
+fix $\bm{D}\!=\![\bm{D}_v|\bm{D}_a]$ at test time.
 \vskip0.4ex
-\textbf{K-SVD + SRC.} Overcomplete dictionaries via rank-one atom updates; route
-each frame by $c^\star=\argmin_c\norm{\bm{y}-\bm{D}_c\bm{\alpha}_c}_2$.
+\lead{K-SVD + SRC.} Overcomplete dictionaries via rank-one atom updates; route each
+frame by which source reconstructs it best,
+$c^\star\!=\!\argmin_c\norm{\bm{y}-\bm{D}_c\bm{\alpha}_c}_2$.
 \end{block}
 
-\begin{alertblock}{Deep sparse coding network (novel)}
-Predict the mask by \textbf{unrolling a non-negative proximal solver and learning
-its dictionaries}. Each composite module: fat (upsampling) then tall
-(downsampling) sparse code,
-\[ \bm{\alpha}^{(1)}=\argmin_{\bm{\alpha}\ge0}\tfrac12\norm{\bm{x}-\bm{D}^{(1)}\bm{\alpha}}_2^2
+\begin{alertblock}{Deep sparse coder (the new method)}
+\leadA{Idea.} A deep network \emph{is} a sparse-recovery solver with its steps
+unrolled into layers. We learn the dictionaries by backprop. Each module stacks a
+\emph{fat} (upsampling) then \emph{tall} (downsampling) non-negative code:
+\[ \bm{\alpha}^{(1)}\!=\!\argmin_{\bm{\alpha}\ge0}\tfrac12\norm{\bm{x}\!-\!\bm{D}^{(1)}\bm{\alpha}}_2^2
 +\lambda_1\norm{\bm{\alpha}}_1+\tfrac{\lambda_2}2\norm{\bm{\alpha}}_2^2, \]
-\[ \bm{\alpha}_{k}=\Big[\bm{z}_k-\tfrac1L\bm{D}^\top(\bm{D}\bm{z}_k-\bm{x})
--\tfrac{\lambda_1}L\Big]_+\ \text{(unrolled FISTA)}. \]
-Stack 3 modules + sigmoid head; train end-to-end on
-$\norm{(\bm{M}_v-\bm{M}_v^{\mathrm{IRM}})\odot\bm{M}}_1+\beta\sum_\ell\norm{\bm{\alpha}^{(\ell)}}_1$.
-This is LISTA specialized to non-negative codes and a masking output.
+solved by $K$ unrolled proximal-gradient steps (all matmul + clamp, runs on GPU):
+\[ \bm{\alpha}_k=\big[\bm{z}_k-\tfrac1L\bm{D}^\top(\bm{D}\bm{z}_k-\bm{x})-\tfrac{\lambda_1}L\big]_+. \]
+\leadA{Training.} Stack 3 modules + sigmoid; minimize
+$\norm{(\bm{M}_v-\bm{M}_v^{\mathrm{IRM}})\!\odot\!\bm{M}}_1+\beta\sum_\ell\norm{\bm{\alpha}^{(\ell)}}_1$.
+This is LISTA, specialized to non-negative codes and a masking output.
 \end{alertblock}
 
-\begin{block}{Learned dictionaries}
-\begin{figure}
-\includegraphics[width=\linewidth]{fig_nmf_atoms.pdf}
-\caption{NMF atoms sorted by centroid: vocal (top) ride the formant region,
-accompaniment (bottom) spread lower. Parts-based, as predicted.}
-\end{figure}
+\begin{block}{Stereo as joint sparsity}
+\lead{Two channels, one support.} Left and right share the same active sources, so
+their codes share \emph{rows}. Simultaneous OMP scores atoms by the cross-channel
+row norm $\norm{(\bm{D}^\top\bm{R})_{n,:}}_2$, and the shared support \emph{improves}
+identifiability: $s<\tfrac12(\spark(\bm{A})-1+\operatorname{rank}(\bm{Y}))$.
 \end{block}
 
 \end{column}
 \separatorcolumn
 
-% ================= COLUMN 3 =================
+% ================= COLUMN 3 : RESULTS =================
 \begin{column}{\colwidth}
 
-\begin{block}{Main results (25 MUSDB18 test tracks)}
+\begin{block}{Results on 25 MUSDB18 test tracks}
 \centering
+\setlength{\tabcolsep}{4pt}
 \begin{tabular}{@{}lccc@{}}
 \toprule
 & \multicolumn{2}{c}{\textbf{SI-SDR (dB)}} & \textbf{Time} \\
 \cmidrule(lr){2-3}
 \textbf{Method} & Vocals & Accomp. & (s) \\
 \midrule
-HPSS (median)    & $-11.9$ & $-1.4$ & $0.25$ \\
-REPET-SIM        & $-0.7$  & $2.9$  & $0.08$ \\
-RPCA             & $-3.1$  & $0.2$  & $1.14$ \\
-NMF (supervised) & $0.5$   & $5.1$  & $0.46$ \\
-K-SVD + SRC      & $0.8$   & $7.1$  & $0.28$ \\
-\textbf{Deep coder (ours)} & $\bm{1.6}$ & $\bm{7.7}$ & $\bm{0.08}$ \\
+HPSS (median)      & $-11.9$ & $-1.4$ & $0.25$ \\
+REPET-SIM          & $-0.7$  & $2.9$  & $0.08$ \\
+Robust PCA         & $-3.1$  & $0.2$  & $1.14$ \\
+Supervised NMF     & $0.5$   & $5.1$  & $0.46$ \\
+K-SVD + SRC        & $0.8$   & $7.1$  & $0.28$ \\
+\rowcolor{accentL}\textbf{Deep coder (ours)} & $\bm{1.6}$ & $\bm{7.7}$ & $\bm{0.08}$ \\
 \midrule
-Oracle IRM / IBM & $10.2$  & $15.8$ & --- \\
+Oracle IRM / IBM   & $10.2$  & $15.8$ & --- \\
 \bottomrule
 \end{tabular}
-\vskip0.3ex
+\vskip0.4ex
 \begin{figure}
-\includegraphics[width=0.74\linewidth]{fig_results_bars.pdf}
+\includegraphics[width=0.72\linewidth]{fig_results_bars.pdf}
 \end{figure}
-\textbf{Training-free $<$ supervised $<$ deep.} The deep coder is the best
-non-oracle on both sources and the fastest learned model.
+\begin{itemize}
+\item \lead{Clear ordering:} training-free $<$ supervised $<$ deep.
+\item \lead{Best of both:} the deep coder wins on both sources \emph{and} is the
+fastest learned model. Soft masks add $+1$ dB over hard masks.
+\end{itemize}
 \end{block}
 
-\begin{block}{Ablations}
+\begin{block}{What the knobs do (ablations)}
 \centering
+\setlength{\tabcolsep}{5pt}
 \begin{tabular}{@{}lcccc@{}}
 \toprule
 NMF atoms $K$ & 16 & 32 & 64 & 128 \\
@@ -249,26 +258,28 @@ RPCA $\lambda$ scale & 0.5 & 1.0 & 1.5 & 2.0 \\
 Vocal SI-SDR & $-3.9$ & $-3.6$ & $-3.2$ & $\bm{-2.3}$ \\
 \bottomrule
 \end{tabular}
-\vskip0.5ex
-Smaller NMF dictionaries \emph{generalize better} (regularization); K-SVD improves
-with sparsity to $s{=}10$; larger RPCA $\lambda$ yields cleaner vocals.
+\vskip0.3ex
+\lead{Smaller dictionaries generalize better} (fewer atoms = stronger prior);
+\lead{richer codes help} up to $s\!\approx\!10$, then saturate.
 \end{block}
 
-\begin{block}{Coherence: an honest negative result}
+\begin{block}{Honest negative result: coherence}
 \begin{figure}
-\includegraphics[width=0.72\linewidth]{fig_ksvd_coherence.pdf}
+\includegraphics[width=0.55\linewidth]{fig_ksvd_coherence.pdf}
 \end{figure}
-Learned dictionaries are coherent ($\mu\approx0.85$), so the worst-case bound
-certifies exact recovery only for $s\lesssim1$, yet OMP at $s{=}10$ separates well.
-\textbf{Average-case $\ne$ worst-case} for trained dictionaries.
+Learned dictionaries are \textbf{coherent} ($\mu\!\approx\!0.85$), so the worst-case
+theorem certifies recovery only for $s\!\lesssim\!1$, yet $s\!=\!10$ works in
+practice. \lead{Average-case $\ne$ worst-case} for trained dictionaries.
 \end{block}
 
 \begin{alertblock}{Takeaways}
 \begin{itemize}
-\item One STFT front end unifies low-rank, NMF, dictionary, and deep methods.
-\item \textbf{Unrolled deep sparse coding}: best non-oracle, fastest learned model.
-\item Increasing structure-learning $\Rightarrow$ monotone quality gain.
-\item Code + models + audio: \texttt{github.com/takakhoo/ENGS109\_Final\_Project}
+\item \leadA{Unification.} One front end places low-rank, NMF, dictionary, and deep
+methods on a single structure-recovery axis.
+\item \leadA{Deep wins.} The unrolled sparse coder is the most accurate non-oracle
+separator \emph{and} the fastest learned model.
+\item \leadA{More structure-learning $\Rightarrow$ better separation}, monotonically.
+\item \leadA{Code, models, audio:} \texttt{github.com/takakhoo/ENGS109\_Final\_Project}
 \end{itemize}
 \end{alertblock}
 

@@ -8,6 +8,8 @@
 \usepackage{hyperref}
 \usepackage[capitalize,noabbrev]{cleveref}
 \usepackage{xcolor}
+\usepackage{algorithm}
+\usepackage{algorithmic}
 
 \graphicspath{{../figures/}}
 
@@ -139,6 +141,59 @@ quantifies the gap between worst-case guarantees and observed behaviour
 (\cref{sec:theory,sec:coherence}). All code, trained weights, and audio examples
 are released for reproducibility.
 
+\section{Background: Spectrograms, Stems, and Masking}
+\label{sec:background}
+We summarize the audio concepts the paper relies on so the development is
+self-contained for readers outside music processing.
+
+\paragraph{From waveform to spectrogram.}
+A recording is a pressure waveform $y(t)$ sampled at $f_s$ samples per second. The
+short-time Fourier transform (STFT) slides a window of length $w$ across the
+signal with hop $h$ and takes a discrete Fourier transform in each window,
+producing a complex matrix $\Y\in\mathbb C^{F\times T}$ where $F=w/2+1$ frequency
+bins index pitch and $T$ frames index time. Its modulus $\M=\lvert\Y\rvert$, the
+\emph{magnitude spectrogram}, is a nonnegative image whose brightness at
+$(f,t)$ is the energy near frequency $f$ at time $t$; its argument $\angle\Y$ is
+the \emph{phase}. The transform is invertible, so $y$ can be reconstructed
+exactly from $\M$ and $\angle\Y$.
+
+\paragraph{Stems and the separation goal.}
+A finished song is a sum of source \emph{stems} (vocals, drums, bass, other). We
+target the two-way split into vocals and accompaniment (everything else). Because
+the STFT is linear, the mixture spectrogram is approximately the sum of the source
+spectrograms, $\Y\approx\sum_c\Y_c$, and on magnitudes the sources mostly occupy
+different time-frequency cells, which is what makes masking viable.
+
+\paragraph{Time-frequency masking.}
+Rather than predict a source spectrogram outright, we predict a \emph{mask}
+$\M_c\in[0,1]^{F\times T}$ that scales each cell of the mixture and resynthesize
+with the mixture phase,
+\begin{equation}
+\hat y_c=\STFT^{-1}(\M_c\odot\Y).
+\end{equation}
+A mask answers a local question: what fraction of the energy in cell $(f,t)$
+belongs to source $c$? The optimal mask under a squared-error criterion is the
+\emph{ideal ratio mask}
+\begin{equation}
+\label{eq:irm}
+\M_c^{\mathrm{IRM}}=\frac{\lvert\Y_c\rvert^2}{\sum_k\lvert\Y_k\rvert^2},
+\end{equation}
+which is exactly the multichannel Wiener / minimum-mean-square-error estimator when
+sources are modelled as locally uncorrelated Gaussians. Equation~\eqref{eq:irm}
+requires the true sources, so it serves only as an oracle upper bound; the binary
+variant $\M_c^{\mathrm{IBM}}=\mathbb 1[\lvert\Y_c\rvert>\lvert\Y_{\neg c}\rvert]$ is a
+second oracle. Every method we build estimates a mask without access to the
+sources, and no mixture-phase magnitude mask can exceed the ideal-mask ceilings.
+
+\paragraph{Why sparsity and low rank.}
+Two empirical regularities make these masks recoverable by structured optimization.
+A voiced sound places energy on a sparse set of harmonics (a few bright horizontal
+ridges per frame), so its spectrogram is approximately \emph{sparse} in a
+harmonic-atom basis. Sustained, repeating accompaniment reuses a small set of
+spectral templates across many frames, so its magnitude spectrogram is approximately
+\emph{low-rank}. These are the two structural priors compressed sensing is built to
+exploit, and they organize the four methods below.
+
 \section{Related Work}
 \label{sec:related}
 \paragraph{Factorization and low-rank models.}
@@ -260,10 +315,20 @@ updates~\cite{lee2000algorithms} are
 \qquad
 \D\leftarrow\D\odot\frac{(\M\oslash\D\Hb)\Hb^\top}{\bm1\Hb^\top},
 \end{equation}
-where $\odot,\oslash$ are elementwise. At test time we fix
-$\D=[\D_v\mid\D_a]$ and solve only for activations $\Hb$, then reconstruct
+where $\odot,\oslash$ are elementwise. These updates are not heuristic: they are a
+majorization-minimization scheme. For the divergence $D(\M\,\|\,\D\Hb)$ one builds
+an auxiliary function $G(\Hb,\Hb')\ge D(\M\,\|\,\D\Hb)$ with equality at
+$\Hb'=\Hb$, using the convexity of $-\log$ and Jensen's inequality on the latent
+assignment $\D_{ik}H_{kj}/(\D\Hb)_{ij}$; minimizing $G(\cdot,\Hb')$ in closed form
+yields the multiplicative step, so each update cannot increase the loss and the
+iterates converge to a stationary point. The factors stay nonnegative
+automatically because every quantity in the ratio is nonnegative. At test time we
+fix $\D=[\D_v\mid\D_a]$ and solve only for activations $\Hb$, then reconstruct
 $\widehat\M_v=\D_v\Hb_v$ and $\widehat\M_a=\D_a\Hb_a$. This is the supervised NMF
-template of \citet{smaragdis2007convolutive}.
+template of \citet{smaragdis2007convolutive}; the Kullback-Leibler choice
+corresponds to a Poisson observation model on spectrogram counts, while the
+Itakura-Saito divergence ($\beta\!=\!0$) corresponds to a multiplicative-Gaussian
+model of power spectra~\cite{fevotte2009isnmf}.
 
 \subsection{Discriminative dictionaries with SRC}
 \label{sec:ksvd}
@@ -273,9 +338,17 @@ $\norm{\xv_i}_0\le s$. K-SVD~\cite{aharon2006ksvd} alternates OMP sparse coding 
 a per-atom update: writing $\D\X=\sum_j\D_j\bm x^{j\top}$ and forming the residual
 $\Ev_{j}=\Y-\sum_{k\ne j}\D_k\bm x^{k\top}$ restricted to the atom's active set, the
 rank-one SVD $\Ev_j^{R}=\bm U\bm\Sigma\bm V^\top$ updates $\D_j\leftarrow\bm u_1$ and
-the coefficients $\leftarrow\sigma_1\bm v_1$. At test time we sparse-code each
-mixture frame on $[\D_v\mid\D_a]$ by OMP and route energy by the SRC residual
-rule~\cite{wright2009src}: $c^\star=\argmin_c\norm{\yv-\D_c\av_c}_2$.
+the coefficients $\leftarrow\sigma_1\bm v_1$. The rank-one update is optimal in the
+Eckart-Young sense: $(\bm u_1,\sigma_1\bm v_1)$ is the exact minimizer of
+$\norm{\Ev_j^{R}-\D_j\bm x^{j\top}}_F$ over all unit atoms and coefficient rows, so
+the atom update is a coordinate descent step that cannot increase the objective,
+and restricting to the active set $\{i:\bm x^{j}_i\!\ne\!0\}$ preserves the sparsity
+pattern set by the coding step. At test time we sparse-code each mixture frame on
+$[\D_v\mid\D_a]$ by OMP and route energy by the SRC residual
+rule~\cite{wright2009src}: $c^\star=\argmin_c\norm{\yv-\D_c\av_c}_2$. The coherence
+condition \cref{eq:coh} governs when this per-frame code is unique, linking the
+separator's reliability to a measurable property of the learned dictionary
+(\cref{sec:coherence}).
 
 \subsection{Deep sparse coding network}
 \label{sec:scn}
@@ -311,11 +384,44 @@ ratio mask with an explicit sparsity penalty on the codes,
 \mathcal L=\norm{(\M_v-\M_v^{\mathrm{IRM}})\odot\M}_1
 +\beta\sum_\ell\norm{\av^{(\ell)}}_1.
 \end{equation}
-\Cref{eq:scn1,eq:scn2,eq:fista} make explicit that the network is a learned
+\begin{algorithm}[t]
+\caption{Composite module forward pass (one of $L_m$). All steps are matrix
+multiplies and clamps, so the pass is differentiable and runs on a GPU.}
+\label{alg:scn}
+\begin{algorithmic}[1]
+\STATE {\bfseries Input:} frame $\xv$, dictionaries $\D^{(1)},\D^{(2)}$,
+shrinkage $\lambda_1,\lambda_2$, steps $K$
+\STATE $\D \leftarrow \D^{(1)}$;\; $L\leftarrow \sigma_{\max}(\D)^2+\lambda_2$
+\hfill {\small(power iteration)}
+\STATE $\av\leftarrow\bm0$;\; $\bm z\leftarrow\bm0$;\; $t\leftarrow1$
+\FOR{$k=1$ {\bfseries to} $K$}
+  \STATE $\bm g\leftarrow \D^\top(\D\bm z-\xv)+\lambda_2\bm z$
+  \hfill {\small(gradient)}
+  \STATE $\av^{+}\leftarrow\big[\bm z-\bm g/L-\lambda_1/L\big]_+$
+  \hfill {\small(non-neg.\ shrinkage)}
+  \STATE $t^{+}\leftarrow\tfrac12(1+\sqrt{1+4t^2})$
+  \STATE $\bm z\leftarrow\av^{+}+\tfrac{t-1}{t^{+}}(\av^{+}-\av)$;\;
+         $\av\leftarrow\av^{+}$;\; $t\leftarrow t^{+}$
+\ENDFOR
+\STATE repeat lines 2--9 with $\D^{(2)}$ on input $\av$ to obtain $\av^{(2)}$
+\STATE {\bfseries return} $\av^{(2)}$
+\end{algorithmic}
+\end{algorithm}
+
+\Cref{alg:scn} gives the per-module computation. \Cref{eq:scn1,eq:scn2,eq:fista}
+make explicit that the network is a learned
 sparse-recovery operator: \cref{eq:fista} is one unrolled iteration of the same
 proximal solver used for $\ell_1$ recovery, with $\D$ promoted to a trainable
 parameter, exactly the LISTA construction~\cite{gregor2010lista} specialized to
-non-negative codes and a masking output.
+non-negative codes and a masking output. The clamp $[\cdot]_+$ is the proximal
+operator of the indicator of the nonnegative orthant composed with the
+soft-threshold, i.e.\ the prox of $\lambda_1\norm{\av}_1+\iota_{\av\ge0}(\av)$, so
+each layer is a genuine proximal-gradient step. Run to convergence rather than
+truncated, the accelerated iteration attains the optimal first-order rate
+$F(\av_k)-F(\av^\star)=O(1/k^2)$~\cite{beck2009fista}; unrolling a fixed $K$ trades
+this asymptotic guarantee for a learned operator that reaches comparable quality in
+a handful of layers, which is why inference is a single fast forward pass rather
+than an iterative solve (\cref{sec:exp}).
 
 \subsection{Joint sparsity for stereo}
 \label{sec:mmv}
@@ -350,7 +456,9 @@ parameters, trained on Apple MPS).
 
 \begin{table}[t]
 \caption{Median SI-SDR and SDR (dB) on $25$ MUSDB18 test tracks, with mean
-inference time per $6$\,s clip. Best non-oracle in \textbf{bold}.}
+inference time per $6$\,s clip. Trivial floors, training-free baselines,
+structured-recovery methods, and oracle ceilings. Best non-oracle in
+\textbf{bold}.}
 \label{tab:main}
 \centering
 \small
@@ -360,13 +468,23 @@ inference time per $6$\,s clip. Best non-oracle in \textbf{bold}.}
 \cmidrule(lr){2-3}
 \textbf{Method} & Vocals & Accomp. & Vocals & (s) \\
 \midrule
+\multicolumn{5}{@{}l}{\textit{Trivial floors}}\\
+Mixture (no split) & $-3.7$  & $4.0$  & --- & $0.00$ \\
+Random mask        & $-3.9$  & $2.9$  & --- & $0.01$ \\
+Low-rank (rank 4)  & $-0.1$  & $6.1$  & --- & $0.06$ \\
+\midrule
+\multicolumn{5}{@{}l}{\textit{Training-free baselines}}\\
 HPSS (median)      & $-11.9$ & $-1.4$ & $0.3$  & $0.25$ \\
 REPET-SIM          & $-0.7$  & $2.9$  & $2.5$  & $0.08$ \\
+\midrule
+\multicolumn{5}{@{}l}{\textit{Structured-recovery methods}}\\
 RPCA               & $-3.1$  & $0.2$  & $-1.3$ & $1.14$ \\
 NMF (supervised)   & $0.5$   & $5.1$  & $1.8$  & $0.46$ \\
 K-SVD + SRC        & $0.8$   & $7.1$  & $2.7$  & $0.28$ \\
 SCN (ours)         & $\mathbf{1.6}$ & $\mathbf{7.7}$ & $\mathbf{3.8}$ & $0.08$ \\
+Mask fusion        & $1.4$   & $\mathbf{7.8}$ & --- & $0.82$ \\
 \midrule
+\multicolumn{5}{@{}l}{\textit{Oracle ceilings}}\\
 Oracle IRM         & $10.1$  & $15.3$ & $10.2$ & --- \\
 Oracle IBM         & $10.2$  & $15.8$ & $10.5$ & --- \\
 \bottomrule
@@ -374,14 +492,62 @@ Oracle IBM         & $10.2$  & $15.8$ & $10.5$ & --- \\
 \end{table}
 
 \paragraph{Main results.}
-\Cref{tab:main} and \cref{fig:bars} show a consistent ordering. The training-free
-baselines are weakest: HPSS over-suppresses tonal vocal energy and REPET-SIM only
-captures strictly repeating backgrounds. The supervised dictionary methods improve
-sharply, and the deep sparse coding network is the best non-oracle separator on
+\Cref{tab:main} and \cref{fig:bars} show a consistent ordering. The trivial floors
+calibrate the scale: returning the mixture unchanged already scores $+4.0$ dB on
+accompaniment, because the accompaniment dominates the mixture energy, so
+accompaniment SI-SDR must be read against this floor rather than against zero; a
+random mask is near the no-information floor on both sources. The training-free
+baselines are mixed: HPSS over-suppresses tonal vocal energy (its median vocal
+SI-SDR falls below even the mixture floor), and REPET-SIM helps only when the
+background strictly repeats. The supervised dictionary methods improve sharply over
+all floors, and the deep sparse coding network is the best non-oracle separator on
 both sources ($1.6$ dB vocals, $7.7$ dB accompaniment) while also being the fastest
 learned model, because its forward pass is a fixed number of matrix multiplies
-rather than an iterative solve. All methods remain below the IRM/IBM oracle
-ceilings, as any mixture-phase magnitude mask must.
+rather than an iterative solve. A simple geometric-mean fusion of the three learned
+masks edges out the best single model on accompaniment ($7.8$ dB), indicating the
+methods make partly complementary errors. All methods remain below the IRM/IBM
+oracle ceilings, as any mixture-phase magnitude mask must.
+
+\paragraph{Per-track variance.}
+Medians hide spread. \Cref{fig:box} plots the per-track vocal SI-SDR distribution.
+The structured-recovery methods are not uniformly better track by track: their
+boxes overlap, and every method has a long lower tail on dense, vocal-quiet
+mixtures where the sparsity prior is weakest. The deep model has the highest median
+and upper quartile, and shifts the whole distribution rightward relative to the
+classical methods rather than only improving easy tracks.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{fig_boxplot.pdf}
+\caption{Per-track vocal SI-SDR over the $25$ test tracks. Boxes span the
+interquartile range; the deep model shifts the full distribution, not only the
+median.}
+\label{fig:box}
+\end{figure}
+
+\paragraph{Soft versus binary masks.}
+The masking strategy matters independently of the model. \Cref{fig:mask} compares
+each learned method's soft (ratio) mask against its hard-thresholded binary version.
+Soft masks are uniformly better, by roughly $1$ dB for the deep model
+($1.6$ vs $0.6$ dB), because a continuous gain preserves the partial-overlap cells
+that a binary decision discards. This mirrors the gap between the IRM and IBM
+oracles and motivates our soft-mask training target.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.85\linewidth]{fig_masktype.pdf}
+\caption{Soft (ratio) masks beat hard binary masks for every learned method, by up
+to $1$ dB of vocal SI-SDR.}
+\label{fig:mask}
+\end{figure}
+
+\paragraph{Stereo joint sparsity.}
+Evaluating the simultaneous-OMP stereo separator of \cref{sec:mmv} on $10$ stereo
+test tracks gives median SI-SDR $0.9$ dB vocals and $7.3$ dB accompaniment,
+matching the mono K-SVD dictionary it is built on while producing a coherent stereo
+image, since the shared row support forces the two channels to agree on active
+atoms. This confirms the joint-sparsity extension is sound; a larger stereo study is
+left to future work.
 
 \begin{figure}[t]
 \centering

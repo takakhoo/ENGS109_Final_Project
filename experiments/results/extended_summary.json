@@ -1,0 +1,30 @@
+{
+  "summary": {
+    "mixture": {
+      "vocals_median": -3.72,
+      "acc_median": 4.026
+    },
+    "lowrank": {
+      "vocals_median": -0.079,
+      "acc_median": 6.058
+    },
+    "random": {
+      "vocals_median": -3.949,
+      "acc_median": 2.893
+    },
+    "nmf": {
+      "vocals_median": 0.506,
+      "acc_median": 5.077
+    },
+    "ksvd": {
+      "vocals_median": 0.791,
+      "acc_median": 7.114
+    },
+    "scn": {
+      "vocals_median": 1.567,
+      "acc_median": 7.712
+    }
+  },
+  "oracle_irm_vocals": 10.106,
+  "oracle_irm_acc": 15.27
+}

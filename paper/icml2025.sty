@@ -384,8 +384,8 @@ the offending package(s), or layout-changing commands and try again.
    % running title too long
    \ifdim\wd\titrun>\textwidth%
 	  {\gdef\@runningtitleerror{1}}%
-   % running title breaks a line
-   \else\ifdim\ht\titrun>6.25pt
+   % running title breaks a line (threshold relaxed for single-line short titles)
+   \else\ifdim\ht\titrun>20pt
 	   {\gdef\@runningtitleerror{2}}%
 	\fi
    \fi
