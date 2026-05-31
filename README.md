@@ -1,35 +1,45 @@
 # Sparse, Low-Rank, and Deep
-### A Compressed-Sensing Framework for Music Source Separation
+### A Unified Compressed-Sensing Framework for Music Source Separation
 
-**ENGS 109: High-Dimensional Sensing and Learning — Final Project (Spring 2026)**
+**ENGS 109: High-Dimensional Sensing and Learning — Final Project**
 **Taka Khoo · Thayer School of Engineering, Dartmouth College**
 
 ---
 
-This project separates a music mixture into **vocals** and **accompaniment** five different ways, each one tied to a specific lecture from ENGS 109, and benchmarks them head-to-head on MUSDB18. The unifying idea: music source separation is a compressed-sensing problem on the short-time Fourier spectrogram.
+Music vocal/accompaniment separation, cast as a single structured-recovery problem on the short-time Fourier spectrogram. Classical decompositions and deep networks are treated as points on one axis: recovery of sparse or low-rank representations. Four separators are built on a shared STFT front end and benchmarked against training-free baselines and oracle masks on MUSDB18.
 
-| Stage | Method | Lecture | Vocals SI-SDR | Accomp. SI-SDR |
-|-------|--------|---------|:---:|:---:|
-| **A** | Robust PCA (low-rank + sparse) | L13 | −3.6 dB | 0.1 dB |
-| **B** | NMF with class-conditional dictionaries | L15 | 1.3 dB | 6.9 dB |
-| **C** | K-SVD dictionaries + SRC | L14, L8 | **2.7 dB** | 7.2 dB |
-| **D** | **SparseNet** mask predictor | L16 | 2.5 dB | **8.2 dB** |
-| **E** | MMV joint sparsity (stereo, SOMP) | L12 | (stereo refine) | (stereo refine) |
-| — | Oracle (ideal ratio mask) | ceiling | 10.1 dB | 15.5 dB |
+| Method | Family | Vocals SI-SDR | Accomp. SI-SDR | Time/clip |
+|--------|--------|:---:|:---:|:---:|
+| HPSS (median filtering) | training-free | −11.9 | −1.4 | 0.25 s |
+| REPET-SIM | training-free | −0.7 | 2.9 | 0.08 s |
+| Robust PCA | low-rank + sparse | −3.1 | 0.2 | 1.14 s |
+| Supervised NMF | factorization | 0.5 | 5.1 | 0.46 s |
+| K-SVD + SRC | dictionary learning | 0.8 | 7.1 | 0.28 s |
+| **Deep sparse coder** | **unrolled / learned** | **1.6** | **7.7** | **0.08 s** |
+| Oracle IRM / IBM | ceiling | 10.2 | 15.8 | — |
 
-*Median SI-SDR over 12 held-out MUSDB18 sample tracks. Clean unsupervised → supervised → deep progression. See [`paper/paper.pdf`](paper/paper.pdf) and [`poster/poster.pdf`](poster/poster.pdf).*
+*Median SI-SDR over 25 held-out MUSDB18 test tracks. The unrolled deep sparse coding network is the strongest non-oracle separator on both sources and the fastest learned model at inference.*
 
-### The novelty
+### Method
 
-SparseNet (Chin's L16 architecture: stacked *fat-upsampling → tall-downsampling* sparse-coding modules) has only ever been benchmarked on **image classification**. This project is the first adaptation of its composite sparse-coding modules to **spectrogram-domain dense regression**, evaluated against Demucs v4 and the ElevenLabs API on MUSDB18.
+Each separator produces a soft time-frequency mask and resynthesizes with the mixture phase.
 
-### Three acts, one advisor
+- **Robust PCA** — principal component pursuit `min ‖X‖_* + λ‖E‖₁ s.t. X+E=M` splits the magnitude spectrogram into a low-rank accompaniment and a sparse vocal residual.
+- **Supervised NMF** — per-source non-negative dictionaries trained by Lee-Seung KL multiplicative updates; activations split at test time.
+- **K-SVD + SRC** — overcomplete sparsifying dictionaries with OMP coding; time-frequency energy routed by the sparse-representation-classification residual rule.
+- **Deep sparse coding network** — predicts the mask by unrolling a non-negative fast proximal-gradient solver and learning the synthesis dictionaries end-to-end (a LISTA-style construction specialized to non-negative codes and a masking output).
+- **MMV / SOMP** — joint-sparsity extension for stereo: simultaneous OMP forces both channels to share an atom support.
 
-This is the third time I have studied audio under Peter Chin:
+### The unifying observation
 
-1. **Undergrad thesis** — a 1.08B-parameter Token U-Net for full-mix music *restoration* on EnCodec tokens.
-2. **MS thesis** — MODULO / Mozart AI, a co-creative DAW whose stem *separation* is outsourced to ElevenLabs (≈35 dB SI-SDR below Demucs).
-3. **This project** — attack separation from the compressed-sensing / sparse-coding angle, with the theoretical guarantees the deep baselines lack.
+The spectrogram magnitude of a musical source is approximately sparse in a source-adapted basis, and sustained harmonic content is approximately low-rank. These are exactly the structural assumptions of compressed sensing and sparse coding, and deep masking networks can be read as unrolled sparse-recovery solvers with learned operators. Increasing the amount of structure-learning, from training-free decomposition to supervised factorization to discriminative dictionaries to an end-to-end unrolled solver, produces a monotone improvement in separation quality.
+
+### Deliverables
+
+- [`paper/paper.pdf`](paper/paper.pdf) — 8-page paper (official ICML 2025 format)
+- [`poster/poster.pdf`](poster/poster.pdf) — A0 landscape conference poster
+- [`audio_examples/`](audio_examples/) — curated before/after WAVs, all stages
+- [`figures/`](figures/) — all paper figures, regenerable from artifacts
 
 ---
 
@@ -41,40 +51,40 @@ python -c "import musdb; musdb.DB(download=True, root='data/musdb18_sample')"   
 
 PYTHONPATH=src python scripts/run_stage_a.py            # Robust PCA on one track
 PYTHONPATH=src python scripts/train_dictionaries.py     # NMF + K-SVD dictionaries
-PYTHONPATH=src python scripts/train_sparsenet.py        # Stage D (Apple MPS / CUDA)
-PYTHONPATH=src python scripts/evaluate_all.py           # full comparison table
+PYTHONPATH=src python scripts/train_sparsenet.py        # deep sparse coder (MPS/CUDA)
+PYTHONPATH=src python scripts/run_experiments.py        # full comparison + baselines
+PYTHONPATH=src python scripts/run_ablations.py          # hyperparameter sweeps
 PYTHONPATH=src python scripts/make_audio_examples.py    # curated playable WAVs
-PYTHONPATH=src python figures/make_all_figures.py       # all paper figures
+PYTHONPATH=src python figures/make_all_figures.py       # all figures
+PYTHONPATH=src python tests/test_solvers.py             # solver correctness tests
 ```
 
-## Reproduce the deliverables
+## Reproduce the documents
 
 ```bash
-cd paper  && tectonic paper.tex     # 4-page ICML-style report
-cd poster && tectonic poster.tex    # A0 conference poster
+cd paper  && tectonic paper.tex
+cd poster && tectonic poster.tex
 ```
 
 ## Repository layout
 
 ```
-src/separation/      five separation stages + features/io/metrics
-  stage_a_rpca.py      Robust PCA, inexact ALM (L13)
-  stage_b_nmf.py       class-conditional NMF, Lee-Seung KL (L15)
-  stage_c_ksvd.py      K-SVD dictionaries + OMP + SRC (L14, L8)
-  stage_d_scn.py       SparseNet: unrolled FISTA, end-to-end (L16)
-  stage_e_mmv.py       Simultaneous OMP for stereo (L12)
-scripts/             runnable training/eval/figure entry points
-figures/             generated paper figures + make_all_figures.py
-paper/               ICML-style final report (LaTeX)
-poster/              A0 conference poster (LaTeX, tikzposter)
-audio_examples/      curated before/after WAVs + INDEX
-experiments/         trained dictionaries, SparseNet checkpoint, results
+src/separation/      separation methods + features/io/metrics/baselines
+  stage_a_rpca.py      robust PCA (principal component pursuit)
+  stage_b_nmf.py       class-conditional NMF (KL multiplicative updates)
+  stage_c_ksvd.py      K-SVD dictionaries + OMP + SRC routing
+  stage_d_scn.py       deep sparse coding network (unrolled FISTA, end-to-end)
+  stage_e_mmv.py       simultaneous OMP for stereo joint sparsity
+  baselines.py         median-filtering HPSS, REPET-SIM
+scripts/             training / evaluation / ablation / figure entry points
+figures/             generated figures + make_all_figures.py
+paper/               ICML-format paper (LaTeX + bib)
+poster/              A0 conference poster (beamerposter)
+audio_examples/      curated before/after WAVs
+experiments/         trained dictionaries, network checkpoint, result CSVs
+tests/               solver correctness tests (RPCA, OMP, SOMP)
 ```
 
-## Course connection
+## Evaluation
 
-Every stage reuses problem-set code: OMP (PS3), FISTA (PS5), SRC (PS7), nuclear-norm SVT (PS8). Every theoretical guarantee proved in class (RIP δ₂ₛ < √2−1, Candès–Recht |Ω| ≥ CN^{5/4}r log N, RPCA λ = 1/√N₁) has a direct consequence in the method.
-
----
-
-*Generated and maintained as part of the ENGS 109 final project sprint.*
+Median scale-invariant SDR and SDR on 25 held-out MUSDB18 test tracks at 22.05 kHz, 2048-point STFT, hop 512. Two oracle masks (ideal ratio and ideal binary) bound any magnitude-masking method. Solver correctness is verified on synthetic ground truth: RPCA recovers a low-rank-plus-sparse matrix to relative error 1e-8, OMP recovers a known sparse support to 5e-16, and SOMP recovers a shared row support exactly.
