@@ -15,7 +15,7 @@ Music vocal/accompaniment separation, cast as a single structured-recovery probl
 | Robust PCA | low-rank + sparse | −3.1 | 0.2 | 1.14 s |
 | Supervised NMF | factorization | 0.5 | 5.1 | 0.46 s |
 | K-SVD + SRC | dictionary learning | 0.8 | 7.1 | 0.28 s |
-| **Deep sparse coder** | **unrolled / learned** | **1.6** | **7.7** | **0.08 s** |
+| **Deep sparse coder** | **unrolled / learned** | **2.0** | **8.3** | **0.12 s** |
 | Oracle IRM / IBM | ceiling | 10.2 | 15.8 | — |
 
 *Median SI-SDR over 25 held-out MUSDB18 test tracks. The unrolled deep sparse coding network is the strongest non-oracle separator on both sources and the fastest learned model at inference.*

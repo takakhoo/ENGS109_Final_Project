@@ -35,7 +35,7 @@
     "acc_sdr_q25": 14.202,
     "acc_sdr_q75": 17.262,
     "acc_sdr_mean": 15.52356,
-    "time_mean_s": 0.029
+    "time_mean_s": 0.028
   },
   "hpss": {
     "vocals_si_sdr_median": -11.877,
@@ -54,7 +54,7 @@
     "acc_sdr_q25": 1.42,
     "acc_sdr_q75": 2.816,
     "acc_sdr_mean": 2.19996,
-    "time_mean_s": 0.245
+    "time_mean_s": 0.274
   },
   "repet": {
     "vocals_si_sdr_median": -0.689,
@@ -73,7 +73,7 @@
     "acc_sdr_q25": 3.52,
     "acc_sdr_q75": 5.492,
     "acc_sdr_mean": 4.467079999999999,
-    "time_mean_s": 0.079
+    "time_mean_s": 0.078
   },
   "rpca": {
     "vocals_si_sdr_median": -3.104,
@@ -92,7 +92,7 @@
     "acc_sdr_q25": 1.909,
     "acc_sdr_q75": 3.04,
     "acc_sdr_mean": 2.62672,
-    "time_mean_s": 1.138
+    "time_mean_s": 1.125
   },
   "nmf": {
     "vocals_si_sdr_median": 0.506,
@@ -111,7 +111,7 @@
     "acc_sdr_q25": 5.263,
     "acc_sdr_q75": 8.383,
     "acc_sdr_mean": 6.80764,
-    "time_mean_s": 0.457
+    "time_mean_s": 0.453
   },
   "ksvd": {
     "vocals_si_sdr_median": 0.791,
@@ -130,25 +130,25 @@
     "acc_sdr_q25": 6.017,
     "acc_sdr_q75": 9.103,
     "acc_sdr_mean": 7.38592,
-    "time_mean_s": 0.275
+    "time_mean_s": 0.269
   },
   "scn": {
-    "vocals_si_sdr_median": 1.556,
-    "vocals_si_sdr_q25": -0.411,
-    "vocals_si_sdr_q75": 3.661,
-    "vocals_si_sdr_mean": 1.2384,
-    "acc_si_sdr_median": 7.716,
-    "acc_si_sdr_q25": 5.967,
-    "acc_si_sdr_q75": 9.779,
-    "acc_si_sdr_mean": 7.5207999999999995,
-    "vocals_sdr_median": 3.751,
-    "vocals_sdr_q25": 2.808,
-    "vocals_sdr_q75": 5.043,
-    "vocals_sdr_mean": 3.68472,
-    "acc_sdr_median": 8.177,
-    "acc_sdr_q25": 6.89,
-    "acc_sdr_q75": 10.145,
-    "acc_sdr_mean": 8.16788,
-    "time_mean_s": 0.075
+    "vocals_si_sdr_median": 2.014,
+    "vocals_si_sdr_q25": 0.194,
+    "vocals_si_sdr_q75": 4.738,
+    "vocals_si_sdr_mean": 1.81748,
+    "acc_si_sdr_median": 8.292,
+    "acc_si_sdr_q25": 6.171,
+    "acc_si_sdr_q75": 10.055,
+    "acc_si_sdr_mean": 7.92748,
+    "vocals_sdr_median": 4.081,
+    "vocals_sdr_q25": 3.089,
+    "vocals_sdr_q75": 5.945,
+    "vocals_sdr_mean": 4.07072,
+    "acc_sdr_median": 8.784,
+    "acc_sdr_q25": 7.042,
+    "acc_sdr_q75": 10.435,
+    "acc_sdr_mean": 8.5506,
+    "time_mean_s": 0.118
   }
 }

@@ -207,7 +207,7 @@ unrolled into layers. We learn the dictionaries by backprop. Each module stacks 
 +\lambda_1\norm{\bm{\alpha}}_1+\tfrac{\lambda_2}2\norm{\bm{\alpha}}_2^2, \]
 solved by $K$ unrolled proximal-gradient steps (all matmul + clamp, runs on GPU):
 \[ \bm{\alpha}_k=\big[\bm{z}_k-\tfrac1L\bm{D}^\top(\bm{D}\bm{z}_k-\bm{x})-\tfrac{\lambda_1}L\big]_+. \]
-\leadA{Training.} Stack 3 modules + sigmoid; minimize
+\leadA{Training.} Stack 4 modules + sigmoid; minimize
 $\norm{(\bm{M}_v-\bm{M}_v^{\mathrm{IRM}})\!\odot\!\bm{M}}_1+\beta\sum_\ell\norm{\bm{\alpha}^{(\ell)}}_1$.
 This is LISTA, specialized to non-negative codes and a masking output.
 \end{alertblock}
@@ -242,7 +242,7 @@ proximal-gradient (FISTA) iteration; run forever it hits the optimal
 $O(1/k^2)$ rate, but we stop at $K$ learned steps.
 \item \lead{Interpretable parameters.} The weights \emph{are} dictionaries and
 shrinkage thresholds, not opaque filters.
-\item \lead{Cheap and small.} One forward pass, $0.3$M parameters, no
+\item \lead{Cheap and small.} One forward pass, $1.4$M parameters, no
 test-time optimization, runs on a laptop GPU.
 \item \lead{Temporal context.} A $\pm2$-frame window feeds each prediction, so the
 coder sees local time structure.
@@ -276,7 +276,7 @@ REPET-SIM          & $-0.7$  & $2.9$  & $0.08$ \\
 Robust PCA         & $-3.1$  & $0.2$  & $1.14$ \\
 Supervised NMF     & $0.5$   & $5.1$  & $0.46$ \\
 K-SVD + SRC        & $0.8$   & $7.1$  & $0.28$ \\
-\rowcolor{accentL}\textbf{Deep coder (ours)} & $\bm{1.6}$ & $\bm{7.7}$ & $\bm{0.08}$ \\
+\rowcolor{accentL}\textbf{Deep coder (ours)} & $\bm{2.0}$ & $\bm{8.3}$ & $\bm{0.12}$ \\
 \midrule
 Oracle IRM / IBM   & $10.2$  & $15.8$ & --- \\
 \bottomrule

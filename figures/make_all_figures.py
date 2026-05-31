@@ -236,7 +236,12 @@ def main():
         model = SparseNet(**ckpt["config"]); model.load_state_dict(ckpt["state_dict"])
         model.eval()
         with torch.no_grad():
-            Xt = torch.tensor(Mmix.T, dtype=torch.float32)
+            from separation.features import stack_context
+            Xin = Mmix.T
+            ctx = getattr(model, "context", 0)
+            if ctx > 0:
+                Xin = stack_context(Xin, ctx)
+            Xt = torch.tensor(Xin, dtype=torch.float32)
             maskD = model(Xt)[0].T.numpy()
         panels.append((maskD, "SparseNet mask (Stage D)"))
     except Exception as e:

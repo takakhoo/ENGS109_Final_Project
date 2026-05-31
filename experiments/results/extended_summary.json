@@ -21,8 +21,8 @@
       "acc_median": 7.114
     },
     "scn": {
-      "vocals_median": 1.567,
-      "acc_median": 7.712
+      "vocals_median": 2.098,
+      "acc_median": 8.285
     }
   },
   "oracle_irm_vocals": 10.106,

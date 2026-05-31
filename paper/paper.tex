@@ -91,7 +91,7 @@ extension for stereo recovery. On 25 held-out tracks of the MUSDB18 benchmark, t
 methods form a clear ordering: training-free baselines (median-filtering harmonic
 percussive separation, REPET-SIM) trail supervised dictionary methods, and the
 unrolled deep sparse coding network is the strongest non-oracle separator on both
-sources (vocal SI-SDR $1.6$ dB, accompaniment SI-SDR $7.7$ dB) while being the
+sources (vocal SI-SDR $2.0$ dB, accompaniment SI-SDR $8.3$ dB) while being the
 fastest learned model at inference. We connect each method to the recovery theory
 that governs it and report a negative result: the learned dictionaries are highly
 coherent ($\mu\approx0.85$), so worst-case exact-recovery guarantees are vacuous at
@@ -433,7 +433,12 @@ $t_{k+1}=\tfrac12(1+\sqrt{1+4t_k^2})$,
 $\bm z_{k+1}=\av_k+\tfrac{t_k-1}{t_{k+1}}(\av_k-\av_{k-1})$. Every operation is a
 matrix multiply or a clamp, so the unrolled solver is differentiable and runs on a
 GPU. Stacking $L_m$ composite modules and a linear head with a sigmoid yields a
-mask $\M_v\in[0,1]^{F\times T}$. The dictionaries $\D^{(\ell)}$ and shrinkage
+mask $\M_v\in[0,1]^{F\times T}$. To give each prediction local time structure, the
+input is not a single frame but a stacked $\pm c$-frame context window
+$\xv=[\,\M_{:,t-c};\dots;\M_{:,t+c}\,]\in\R^{(2c+1)F}$, while the target remains the
+center frame's mask; the first dictionary $\D^{(1)}\in\R^{(2c+1)F\times n_u}$ absorbs
+the wider input and all later dimensions are unchanged. The dictionaries
+$\D^{(\ell)}$ and shrinkage
 parameters $\lambda_1,\lambda_2$ are trained by backpropagation through the unrolled
 iterations, minimizing a masked-magnitude reconstruction loss against the ideal
 ratio mask with an explicit sparsity penalty on the codes,
@@ -508,9 +513,10 @@ We compare two training-free baselines, median-filtering harmonic/percussive
 separation (HPSS)~\cite{fitzgerald2010hpss} and REPET-SIM~\cite{rafii2013repet},
 against the four structured-recovery separators of \cref{sec:method}: RPCA,
 supervised NMF ($K{=}64$ atoms per source, KL divergence), discriminative K-SVD
-($K{=}96$, sparsity $s{=}10$), and the deep sparse coding network (SCN; three
-composite modules, $n_u{=}192$, $n_d{=}96$, $K{=}18$ unrolled steps, $0.32$M
-parameters, trained on Apple MPS).
+($K{=}96$, sparsity $s{=}10$), and the deep sparse coding network (SCN; four
+composite modules, $n_u{=}224$, $n_d{=}112$, $K{=}16$ unrolled FISTA steps, a
+$\pm2$-frame temporal context window, $1.44$M parameters, trained for $180$ epochs
+on Apple MPS).
 
 \begin{table}[t]
 \caption{Median SI-SDR and SDR (dB) on $25$ MUSDB18 test tracks, with mean
@@ -539,8 +545,8 @@ REPET-SIM          & $-0.7$  & $2.9$  & $2.5$  & $0.08$ \\
 RPCA               & $-3.1$  & $0.2$  & $-1.3$ & $1.14$ \\
 NMF (supervised)   & $0.5$   & $5.1$  & $1.8$  & $0.46$ \\
 K-SVD + SRC        & $0.8$   & $7.1$  & $2.7$  & $0.28$ \\
-SCN (ours)         & $\mathbf{1.6}$ & $\mathbf{7.7}$ & $\mathbf{3.8}$ & $0.08$ \\
-Mask fusion        & $1.4$   & $\mathbf{7.8}$ & --- & $0.82$ \\
+SCN (ours)         & $\mathbf{2.0}$ & $\mathbf{8.3}$ & $\mathbf{4.1}$ & $0.12$ \\
+Mask fusion        & $2.1$   & $8.1$ & --- & $0.85$ \\
 \midrule
 \multicolumn{5}{@{}l}{\textit{Oracle ceilings}}\\
 Oracle IRM         & $10.1$  & $15.3$ & $10.2$ & --- \\
@@ -559,12 +565,13 @@ baselines are mixed: HPSS over-suppresses tonal vocal energy (its median vocal
 SI-SDR falls below even the mixture floor), and REPET-SIM helps only when the
 background strictly repeats. The supervised dictionary methods improve sharply over
 all floors, and the deep sparse coding network is the best non-oracle separator on
-both sources ($1.6$ dB vocals, $7.7$ dB accompaniment) while also being the fastest
+both sources ($2.0$ dB vocals, $8.3$ dB accompaniment) while also being the fastest
 learned model, because its forward pass is a fixed number of matrix multiplies
-rather than an iterative solve. A simple geometric-mean fusion of the three learned
-masks edges out the best single model on accompaniment ($7.8$ dB), indicating the
-methods make partly complementary errors. All methods remain below the IRM/IBM
-oracle ceilings, as any mixture-phase magnitude mask must.
+rather than an iterative solve. A geometric-mean fusion of the three learned masks
+ties the deep model on vocals ($2.1$ dB) but no longer improves accompaniment once
+the deep model is this strong, so we report the single model as the headline. All
+methods remain below the IRM/IBM oracle ceilings, as any mixture-phase magnitude
+mask must.
 
 \paragraph{Per-track variance.}
 Medians hide spread. \Cref{fig:box} plots the per-track vocal SI-SDR distribution.
@@ -587,7 +594,7 @@ median.}
 The masking strategy matters independently of the model. \Cref{fig:mask} compares
 each learned method's soft (ratio) mask against its hard-thresholded binary version.
 Soft masks are uniformly better, by roughly $1$ dB for the deep model
-($1.6$ vs $0.6$ dB), because a continuous gain preserves the partial-overlap cells
+($2.1$ vs $1.0$ dB), because a continuous gain preserves the partial-overlap cells
 that a binary decision discards. This mirrors the gap between the IRM and IBM
 oracles and motivates our soft-mask training target.
 
@@ -629,7 +636,7 @@ dictionaries and shrinkage parameters; classical methods store fixed dictionarie
 RPCA       & no  & ---            & $1.14$ \\
 NMF        & dict.\ only & $0.13$M  & $0.46$ \\
 K-SVD      & dict.\ only & $0.20$M  & $0.28$ \\
-SCN (ours) & end-to-end  & $0.32$M  & $0.08$ \\
+SCN (ours) & end-to-end  & $1.44$M  & $0.12$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -760,7 +767,7 @@ works, evidence of an average-case-versus-worst-case gap.}
 \section{Discussion}
 \label{sec:discuss}
 The results are deliberately scoped: short clips, modest dictionaries, and a
-$0.32$M-parameter network trained briefly on a laptop GPU. Large end-to-end systems
+$1.4$M-parameter network trained on a laptop GPU. Large end-to-end systems
 reach substantially higher vocal SI-SDR with three to four orders of magnitude more
 parameters and data~\cite{rouard2023htdemucs,mitsufuji2022mdx}. The value here is
 the unifying view and the controlled comparison: on one front end, the same axis of
@@ -770,10 +777,10 @@ a monotone improvement, and the unrolled solver is both the most accurate and th
 cheapest to run at inference. Two limitations are intrinsic to the present setup.
 First, magnitude masking with mixture phase upper-bounds every method at the IRM
 oracle; a complex-mask or phase-reconstruction extension would lift the
-ceiling~\cite{luo2019convtasnet}. Second, the deep model is trained per frame and
-ignores temporal context; convolutional or recurrent composite modules are a
-natural next step. The stereo joint-sparsity extension of \cref{sec:mmv} also
-remains to be evaluated at scale.
+ceiling~\cite{luo2019convtasnet}. Second, the deep model uses only a short
+$\pm2$-frame context; the gain it brings suggests fully convolutional or recurrent
+composite modules with a wider receptive field as a promising next step. The stereo
+joint-sparsity extension of \cref{sec:mmv} also remains to be evaluated at scale.
 
 \section{Conclusion}
 We presented a unified compressed-sensing view of music source separation, casting
