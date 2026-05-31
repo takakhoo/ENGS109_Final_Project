@@ -214,25 +214,25 @@ This is LISTA, specialized to non-negative codes and a masking output.
 
 \begin{block}{Inside the Deep Coder: One Composite Module}
 \centering
-\begin{tikzpicture}[font=\small,
-  io/.style={draw,rounded corners=2pt,align=center,minimum height=12mm,
-             minimum width=15mm,fill=dgreenL,line width=0.7pt,inner sep=2pt},
-  tallb/.style={draw,align=center,minimum width=13mm,minimum height=24mm,
-                fill=purpleA!16,line width=0.8pt,inner sep=2pt},
-  shortb/.style={draw,align=center,minimum width=13mm,minimum height=12mm,
-                 fill=accent!20,line width=0.8pt,inner sep=2pt},
-  lbl/.style={fill=white,inner sep=2pt,font=\footnotesize,align=center,text=ink},
-  arr/.style={-{Stealth[length=3mm]},line width=1pt,draw=dgreen}]
+\begin{tikzpicture}[font=\normalsize,
+  io/.style={draw,rounded corners=3pt,align=center,minimum height=16mm,
+             minimum width=26mm,fill=dgreenL,line width=0.9pt,inner sep=3pt},
+  tallb/.style={draw,rounded corners=2pt,align=center,minimum width=22mm,
+                minimum height=30mm,fill=purpleA!16,line width=1pt,inner sep=3pt},
+  shortb/.style={draw,rounded corners=2pt,align=center,minimum width=22mm,
+                 minimum height=15mm,fill=accent!20,line width=1pt,inner sep=3pt},
+  lbl/.style={fill=white,inner sep=3pt,font=\small,align=center,text=ink},
+  arr/.style={-{Stealth[length=4mm]},line width=1.3pt,draw=dgreen}]
 \node[io] (x) {frame\\$\bm{x}\in\R^{F}$};
-\node[tallb,right=34mm of x] (a1) {$\bm{\alpha}^{(1)}$\\[1pt]\scriptsize$\R^{n_u}$};
-\node[shortb,right=34mm of a1] (a2) {$\bm{\alpha}^{(2)}$\\[1pt]\scriptsize$\R^{n_d}$};
-\node[io,right=28mm of a2] (out) {next\\module};
+\node[tallb,right=72mm of x] (a1) {$\bm{\alpha}^{(1)}$\\[2pt]\footnotesize$\R^{n_u}$};
+\node[shortb,right=72mm of a1] (a2) {$\bm{\alpha}^{(2)}$\\[2pt]\footnotesize$\R^{n_d}$};
+\node[io,right=62mm of a2] (out) {next\\module};
 \draw[arr] (x)--(a1);
-\node[lbl] at ($(x)!0.5!(a1)$) {\textbf{fat} $\bm{D}^{(1)}$\\[-1pt](upsample)};
+\node[lbl] at ($(x)!0.5!(a1)$) {\textbf{fat} $\bm{D}^{(1)}$\\[-1pt]upsample};
 \draw[arr] (a1)--(a2);
-\node[lbl] at ($(a1)!0.5!(a2)$) {\textbf{tall} $\bm{D}^{(2)}$\\[-1pt](downsample)};
+\node[lbl] at ($(a1)!0.5!(a2)$) {\textbf{tall} $\bm{D}^{(2)}$\\[-1pt]downsample};
 \draw[arr] (a2)--(out);
-\end{tikzpicture}\\[0.5ex]
+\end{tikzpicture}\\[0.6ex]
 {\footnotesize A \leadA{fat dictionary} lifts the frame into a \emph{tall},
 over-complete sparse code $\bm{\alpha}^{(1)}$; a \leadA{tall dictionary} then
 compresses it to a \emph{short} code $\bm{\alpha}^{(2)}$ (a clustering effect).
