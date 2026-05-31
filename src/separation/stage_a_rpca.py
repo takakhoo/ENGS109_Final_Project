@@ -64,7 +64,7 @@ def rpca(M: np.ndarray, lam: float | None = None, tol: float = 1e-7,
             break
     info = {"iters": k + 1, "final_residual": residuals[-1],
             "residuals": residuals, "rank": final_rank, "lambda": lam}
-    return np.maximum(X, 0.0), np.maximum(E, 0.0), info
+    return X, E, info
 
 
 def separate(y: np.ndarray, max_iter: int = 120) -> dict:
@@ -76,7 +76,8 @@ def separate(y: np.ndarray, max_iter: int = 120) -> dict:
     Y = stft(y)
     M, _ = magphase(Y)
     X, E, info = rpca(M, max_iter=max_iter)
-    mask_h, mask_p = wiener_masks(X, E)
+    # Spectrogram magnitudes are nonnegative; clamp before masking.
+    mask_h, mask_p = wiener_masks(np.maximum(X, 0.0), np.maximum(E, 0.0))
     y_harm = istft(mask_h * np.abs(Y) * np.exp(1j * np.angle(Y)), length=len(y))
     y_perc = istft(mask_p * np.abs(Y) * np.exp(1j * np.angle(Y)), length=len(y))
     return {

@@ -1,0 +1,10 @@
+Cristina Vane - So Easy                  | stage A      | vocals  -4.10 dB | accomp  -2.79 dB
+Cristina Vane - So Easy                  | stage B      | vocals  +5.37 dB | accomp +10.88 dB
+Cristina Vane - So Easy                  | stage C      | vocals  +5.10 dB | accomp +10.78 dB
+Cristina Vane - So Easy                  | stage oracle | vocals +16.00 dB | accomp +20.63 dB
+Cristina Vane - So Easy                  | stage D      | vocals  +5.17 dB | accomp +10.35 dB
+Al James - Schoolboy Facination          | stage A      | vocals  +0.78 dB | accomp  -0.01 dB
+Al James - Schoolboy Facination          | stage B      | vocals  +3.09 dB | accomp  +3.11 dB
+Al James - Schoolboy Facination          | stage C      | vocals  +3.49 dB | accomp  +3.46 dB
+Al James - Schoolboy Facination          | stage oracle | vocals +10.60 dB | accomp +10.62 dB
+Al James - Schoolboy Facination          | stage D      | vocals  +3.67 dB | accomp  +4.39 dB
