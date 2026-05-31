@@ -72,21 +72,21 @@
     "acc_sdr_mean": 7.814750000000001
   },
   "D": {
-    "vocals_si_sdr_median": 1.4929999999999999,
-    "vocals_si_sdr_q25": -0.6002500000000001,
-    "vocals_si_sdr_q75": 4.460999999999999,
-    "vocals_si_sdr_mean": 1.4314999999999998,
-    "vocals_sdr_median": 3.678,
-    "vocals_sdr_q25": 2.73075,
-    "vocals_sdr_q75": 5.613,
-    "vocals_sdr_mean": 3.9385833333333333,
-    "acc_si_sdr_median": 8.475,
-    "acc_si_sdr_q25": 6.8425,
-    "acc_si_sdr_q75": 9.683,
-    "acc_si_sdr_mean": 7.8536666666666655,
-    "acc_sdr_median": 9.0465,
-    "acc_sdr_q25": 7.507499999999999,
-    "acc_sdr_q75": 10.0415,
-    "acc_sdr_mean": 8.433583333333333
+    "vocals_si_sdr_median": 2.5345,
+    "vocals_si_sdr_q25": -0.89425,
+    "vocals_si_sdr_q75": 4.4915,
+    "vocals_si_sdr_mean": 1.3455833333333331,
+    "vocals_sdr_median": 4.2895,
+    "vocals_sdr_q25": 2.614,
+    "vocals_sdr_q75": 5.41275,
+    "vocals_sdr_mean": 3.853166666666667,
+    "acc_si_sdr_median": 8.219999999999999,
+    "acc_si_sdr_q25": 6.95325,
+    "acc_si_sdr_q75": 9.79975,
+    "acc_si_sdr_mean": 7.788166666666665,
+    "acc_sdr_median": 8.6765,
+    "acc_sdr_q25": 7.75525,
+    "acc_sdr_q75": 10.15925,
+    "acc_sdr_mean": 8.347416666666668
   }
 }
