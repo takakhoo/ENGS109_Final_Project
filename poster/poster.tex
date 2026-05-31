@@ -73,7 +73,8 @@
       \color{white}{\veryHuge\textbf{Sparse, Low-Rank, and Deep}}\\[0.3ex]
       {\LARGE A Unified Compressed-Sensing Framework for Music Source Separation}\\[0.5ex]
       {\large Taka Khoo \quad$\bullet$\quad Thayer School of Engineering, Dartmouth College
-      \quad$\bullet$\quad ENGS 109}
+      \quad$\bullet$\quad ENGS 109}\\[0.35ex]
+      {\normalsize\ttfamily github.com/takakhoo/ENGS109\_Final\_Project}
     \end{column}
     \begin{column}{0.04\paperwidth}\end{column}
   \end{columns}
@@ -97,13 +98,13 @@ This is hard because mixing destroys information: countless track pairs add up t
 the exact same song. We need a \textbf{prior} that says which split is plausible.
 \end{alertblock}
 
-\begin{block}{Intuition: a song is a picture of sound}
+\begin{block}{Intuition: A Song Is a Picture of Sound}
 \begin{itemize}
-\item \lead{Spectrogram.} The short-time Fourier transform turns audio into an
+\item \lead{Spectrogram:} the short-time Fourier transform turns audio into an
 image: time on the $x$-axis, pitch on the $y$-axis, brightness = energy.
-\item \lead{Vocals are sparse.} A singing voice lights up only a few horizontal
+\item \lead{Vocals are sparse:} a singing voice lights up only a few horizontal
 harmonic lines per instant, most of the image is dark.
-\item \lead{Accompaniment is low-rank.} Repeating chords and drums make the
+\item \lead{Accompaniment is low-rank:} repeating chords and drums make the
 background a sum of a few recurring patterns.
 \end{itemize}
 \vskip0.3ex
@@ -112,7 +113,7 @@ background a sum of a few recurring patterns.
 reconstructs MRI and photographs from few measurements applies to audio.
 \end{block}
 
-\begin{block}{The structure each method exploits}
+\begin{block}{The Structure Each Method Exploits}
 \begin{figure}
 \includegraphics[width=\linewidth]{fig_triptych.pdf}
 \caption{Mixture (left), the vocal track (center, sparse harmonic scaffold), and the
@@ -120,7 +121,7 @@ accompaniment (right, denser and low-rank). Our methods reverse the sum.}
 \end{figure}
 \end{block}
 
-\begin{block}{When is recovery guaranteed?}
+\begin{block}{When Is Recovery Guaranteed?}
 For $\bm{y}=\bm{A}\bm{x}$ with $\bm{x}$ $s$-sparse, the convex program
 $\min\norm{\bm{z}}_1$ s.t.\ $\bm{A}\bm{z}=\bm{y}$ returns $\bm{x}$ exactly under
 \emph{any} of three conditions:
@@ -136,7 +137,7 @@ surrogate for rank.
 \end{itemize}
 \end{block}
 
-\begin{block}{Why music lands in the recoverable regime}
+\begin{block}{Why Music Lands in the Recoverable Regime}
 The numbers from a real clip ($f_s\!=\!22$ kHz, $2048$-pt STFT) put us inside the
 guarantees above:
 \begin{itemize}
@@ -157,7 +158,7 @@ that principal component pursuit provably separates.
 % ================= COLUMN 2 : METHODS =================
 \begin{column}{\colwidth}
 
-\begin{block}{One front end, four separators}
+\begin{block}{One Front End, Four Separators}
 \centering
 \begin{tikzpicture}[font=\small,
   io/.style={draw,rounded corners=2pt,align=center,minimum height=12mm,
@@ -182,7 +183,7 @@ fraction of every spectrogram cell; the original \lead{mixture phase} is reused 
 turn the masked magnitude back into audio.}
 \end{block}
 
-\begin{block}{Classical recovery stages}
+\begin{block}{Classical Recovery Stages}
 \lead{Robust PCA.} Split the spectrogram into low-rank + sparse:
 \[ \min_{\bm{X},\bm{E}}\norm{\bm{X}}_*+\lambda\norm{\bm{E}}_1
 \ \text{s.t.}\ \bm{X}\!+\!\bm{E}\!=\!\bm{M},\ \lambda\!=\!\tfrac1{\sqrt{\max(F,T)}}. \]
@@ -198,7 +199,7 @@ frame by which source reconstructs it best,
 $c^\star\!=\!\argmin_c\norm{\bm{y}-\bm{D}_c\bm{\alpha}_c}_2$.
 \end{block}
 
-\begin{alertblock}{Deep sparse coder (the new method)}
+\begin{alertblock}{Deep Sparse Coder (the New Method)}
 \leadA{Idea.} A deep network \emph{is} a sparse-recovery solver with its steps
 unrolled into layers. We learn the dictionaries by backprop. Each module stacks a
 \emph{fat} (upsampling) then \emph{tall} (downsampling) non-negative code:
@@ -211,46 +212,48 @@ $\norm{(\bm{M}_v-\bm{M}_v^{\mathrm{IRM}})\!\odot\!\bm{M}}_1+\beta\sum_\ell\norm{
 This is LISTA, specialized to non-negative codes and a masking output.
 \end{alertblock}
 
-\begin{block}{Inside the deep coder: one composite module}
+\begin{block}{Inside the Deep Coder: One Composite Module}
 \centering
 \begin{tikzpicture}[font=\small,
-  io/.style={draw,rounded corners=2pt,align=center,minimum height=10mm,
-             minimum width=15mm,fill=dgreenL,line width=0.6pt,inner sep=2pt},
-  vec/.style={draw,align=center,line width=0.8pt,minimum width=10mm,inner sep=2pt},
-  arr/.style={-{Stealth[length=2.6mm]},line width=0.9pt,draw=dgreen}]
-\node[io] (x) {frame $\bm{x}$\\\scriptsize$\R^{F}$};
-\node[vec,fill=purpleA!18,minimum height=18mm,right=22mm of x] (a1)
-     {$\bm{\alpha}^{(1)}$\\\scriptsize$\R^{n_u}$};
-\node[vec,fill=accent!22,minimum height=9mm,right=22mm of a1] (a2)
-     {$\bm{\alpha}^{(2)}$\\\scriptsize$\R^{n_d}$};
-\node[io,right=18mm of a2] (out) {next\\module};
-\draw[arr] (x)--(a1) node[midway,above,align=center,font=\footnotesize,text=ink]
-     {\textbf{fat} $\bm{D}^{(1)}$\\upsample};
-\draw[arr] (a1)--(a2) node[midway,above,align=center,font=\footnotesize,text=ink]
-     {\textbf{tall} $\bm{D}^{(2)}$\\downsample};
+  io/.style={draw,rounded corners=2pt,align=center,minimum height=12mm,
+             minimum width=15mm,fill=dgreenL,line width=0.7pt,inner sep=2pt},
+  tallb/.style={draw,align=center,minimum width=13mm,minimum height=24mm,
+                fill=purpleA!16,line width=0.8pt,inner sep=2pt},
+  shortb/.style={draw,align=center,minimum width=13mm,minimum height=12mm,
+                 fill=accent!20,line width=0.8pt,inner sep=2pt},
+  lbl/.style={fill=white,inner sep=2pt,font=\footnotesize,align=center,text=ink},
+  arr/.style={-{Stealth[length=3mm]},line width=1pt,draw=dgreen}]
+\node[io] (x) {frame\\$\bm{x}\in\R^{F}$};
+\node[tallb,right=34mm of x] (a1) {$\bm{\alpha}^{(1)}$\\[1pt]\scriptsize$\R^{n_u}$};
+\node[shortb,right=34mm of a1] (a2) {$\bm{\alpha}^{(2)}$\\[1pt]\scriptsize$\R^{n_d}$};
+\node[io,right=28mm of a2] (out) {next\\module};
+\draw[arr] (x)--(a1);
+\node[lbl] at ($(x)!0.5!(a1)$) {\textbf{fat} $\bm{D}^{(1)}$\\[-1pt](upsample)};
+\draw[arr] (a1)--(a2);
+\node[lbl] at ($(a1)!0.5!(a2)$) {\textbf{tall} $\bm{D}^{(2)}$\\[-1pt](downsample)};
 \draw[arr] (a2)--(out);
-\end{tikzpicture}\\[0.4ex]
-{\footnotesize A \leadA{fat dictionary} lifts the frame into a tall over-complete
-sparse code $\bm{\alpha}^{(1)}$; a \leadA{tall dictionary} compresses it to a short
-code $\bm{\alpha}^{(2)}$ (a clustering effect). Stacking $L_m\!=\!4$ such modules,
-then a sigmoid head, emits the mask.}
+\end{tikzpicture}\\[0.5ex]
+{\footnotesize A \leadA{fat dictionary} lifts the frame into a \emph{tall},
+over-complete sparse code $\bm{\alpha}^{(1)}$; a \leadA{tall dictionary} then
+compresses it to a \emph{short} code $\bm{\alpha}^{(2)}$ (a clustering effect).
+Four such modules and a sigmoid head emit the mask.}
 \end{block}
 
-\begin{block}{Why unrolling wins}
+\begin{block}{Why Unrolling Wins}
 \begin{itemize}
-\item \lead{Every layer is a real solver step.} Eq.\ above is one accelerated
-proximal-gradient (FISTA) iteration; run forever it hits the optimal
+\item \lead{Every layer is a real solver step:} the equation above is one
+accelerated proximal-gradient (FISTA) iteration; run forever it hits the optimal
 $O(1/k^2)$ rate, but we stop at $K$ learned steps.
-\item \lead{Interpretable parameters.} The weights \emph{are} dictionaries and
+\item \lead{Interpretable parameters:} the weights \emph{are} dictionaries and
 shrinkage thresholds, not opaque filters.
-\item \lead{Cheap and small.} One forward pass, $1.4$M parameters, no
+\item \lead{Cheap and small:} one forward pass, $1.4$M parameters, no
 test-time optimization, runs on a laptop GPU.
-\item \lead{Temporal context.} A $\pm2$-frame window feeds each prediction, so the
+\item \lead{Temporal context:} a $\pm2$-frame window feeds each prediction, so the
 coder sees local time structure.
 \end{itemize}
 \end{block}
 
-\begin{block}{Stereo as joint sparsity}
+\begin{block}{Stereo as Joint Sparsity}
 \lead{Two channels, one support.} Left and right share the same active sources, so
 their codes share \emph{rows}. Simultaneous OMP scores atoms by the cross-channel
 row norm $\norm{(\bm{D}^\top\bm{R})_{n,:}}_2$, and the shared support \emph{improves}
@@ -263,7 +266,7 @@ identifiability: $s<\tfrac12(\spark(\bm{A})-1+\operatorname{rank}(\bm{Y}))$.
 % ================= COLUMN 3 : RESULTS =================
 \begin{column}{\colwidth}
 
-\begin{block}{Results on 25 MUSDB18 test tracks}
+\begin{block}{Results on 25 MUSDB18 Test Tracks}
 \centering
 \setlength{\tabcolsep}{4pt}
 \begin{tabular}{@{}lccc@{}}
@@ -284,21 +287,18 @@ Oracle IRM / IBM   & $10.2$  & $15.8$ & --- \\
 \end{tabular}
 \vskip0.4ex
 \begin{figure}
-\includegraphics[width=0.62\linewidth]{fig_results_bars.pdf}
+\includegraphics[width=0.50\linewidth]{fig_results_bars.pdf}
 \end{figure}
 \begin{itemize}
-\item \lead{Adding structure-learning monotonically helps:}
-training-free ($<\!0$ dB) $\to$ supervised dictionaries ($+5$ to $+7$ dB) $\to$
-deep unrolled coder ($+8.3$ dB).
-\item \lead{The deep coder wins on every axis:} best vocals (\underline{$2.0$ dB},
-$2.5\times$ the best classical method), best accompaniment (\underline{$8.3$ dB}),
-and \underline{fastest learned model} ($0.12$ s, one feed-forward pass).
-\item \lead{It reaches $54\%$ of the oracle} accompaniment ceiling, versus
-$\le47\%$ for any classical method.
+\item \lead{Structure-learning helps monotonically:} training-free ($<\!0$ dB)
+$\to$ learned dictionaries ($+5$ to $+7$ dB) $\to$ deep coder ($+8.3$ dB).
+\item \lead{The deep coder wins on every axis:} best vocals
+(\underline{$2.0$ dB}, $2.5\times$ the best classical method), best accompaniment
+(\underline{$8.3$ dB}), and the \underline{fastest learned model} ($0.12$ s).
 \end{itemize}
 \end{block}
 
-\begin{block}{What the knobs do (ablations)}
+\begin{block}{What the Knobs Do (Ablations)}
 \centering
 \setlength{\tabcolsep}{5pt}
 \begin{tabular}{@{}lcccc@{}}
@@ -321,9 +321,9 @@ Vocal SI-SDR & $-3.9$ & $-3.6$ & $-3.2$ & $\bm{-2.3}$ \\
 \lead{richer codes help} up to $s\!\approx\!10$, then saturate.
 \end{block}
 
-\begin{block}{Honest negative result: coherence}
+\begin{block}{Honest Negative Result: Coherence}
 \begin{figure}
-\includegraphics[width=0.43\linewidth]{fig_ksvd_coherence.pdf}
+\includegraphics[width=0.37\linewidth]{fig_ksvd_coherence.pdf}
 \end{figure}
 Learned dictionaries are \textbf{coherent} ($\mu\!\approx\!0.85$), so the worst-case
 theorem certifies recovery only for $s\!\lesssim\!1$, yet $s\!=\!10$ works in
@@ -332,12 +332,14 @@ practice. \lead{Average-case $\ne$ worst-case} for trained dictionaries.
 
 \begin{alertblock}{Takeaways}
 \begin{itemize}
-\item \leadA{Unification.} One front end places low-rank, NMF, dictionary, and deep
-methods on a single structure-recovery axis.
-\item \leadA{Deep wins.} The unrolled sparse coder is the most accurate non-oracle
-separator \emph{and} the fastest learned model.
-\item \leadA{More structure-learning $\Rightarrow$ better separation}, monotonically.
-\item \leadA{Code, models, audio:} \texttt{github.com/takakhoo/ENGS109\_Final\_Project}
+\item \leadA{Four methods, one idea:} all recover a \emph{structured} spectrogram,
+so they compare fairly on one pipeline rather than as rival systems.
+\item \leadA{Learning more structure always helps:} training-free split $<$ learned
+templates $<$ a network whose layers \emph{are} sparse-recovery steps.
+\item \leadA{The deep coder is the practical winner:} cleanest vocals and
+accompaniment, yet small ($1.4$M params) and quickest to run.
+\item \leadA{Theory guides, it does not guarantee:} the trained dictionaries break
+the worst-case conditions yet still work in practice.
 \end{itemize}
 \end{alertblock}
 
