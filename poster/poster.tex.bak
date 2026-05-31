@@ -159,24 +159,25 @@ that principal component pursuit provably separates.
 
 \begin{block}{One front end, four separators}
 \centering
+\resizebox{\linewidth}{!}{%
 \begin{tikzpicture}[font=\small,
-  io/.style={draw,rounded corners=2pt,align=center,minimum height=12mm,
-             minimum width=18mm,fill=dgreenL,line width=0.6pt,inner sep=2pt},
-  bank/.style={draw,rounded corners=3pt,align=left,fill=white,line width=0.8pt,inner sep=4pt},
-  arr/.style={-{Stealth[length=2.6mm]},line width=0.9pt,draw=dgreen}]
+  io/.style={draw,rounded corners=2pt,align=center,minimum height=13mm,
+             minimum width=22mm,fill=dgreenL,line width=0.7pt,inner sep=3pt},
+  bank/.style={draw,rounded corners=3pt,align=left,fill=white,line width=0.9pt,inner sep=5pt},
+  arr/.style={-{Stealth[length=3mm]},line width=1.1pt,draw=dgreen}]
 \node[io] (in) {Mixture\\$y(t)$};
-\node[io,right=7mm of in] (stft) {STFT\\$\bm{M},\,\angle\bm{Y}$};
-\node[bank,right=8mm of stft] (bank) {%
-  \underline{\textbf{pick one separator}}\\[1.2mm]
-  $\bullet$~Robust PCA {\footnotesize(low-rank $+$ sparse)}\\[0.6mm]
-  $\bullet$~Supervised NMF {\footnotesize(class dict.)}\\[0.6mm]
-  $\bullet$~K-SVD $+$ SRC {\footnotesize(learned dict.)}\\[0.6mm]
+\node[io,right=9mm of in] (stft) {STFT\\$\bm{M},\,\angle\bm{Y}$};
+\node[bank,right=11mm of stft] (bank) {%
+  \underline{\textbf{pick one separator}}\\[1.6mm]
+  $\bullet$~Robust PCA \;{\footnotesize(low-rank $+$ sparse)}\\[1mm]
+  $\bullet$~Supervised NMF \;{\footnotesize(class dictionaries)}\\[1mm]
+  $\bullet$~K-SVD $+$ SRC \;{\footnotesize(learned dictionaries)}\\[1mm]
   {\color{accent}$\bigstar$~\textbf{Deep sparse coder} {\footnotesize(ours)}}};
-\node[io,right=8mm of bank] (mask) {Soft\\mask $\bm{M}_c$};
-\node[io,right=7mm of mask] (out) {Stems\\$\hat y_c$};
+\node[io,right=11mm of bank] (mask) {Soft mask\\$\bm{M}_c\!\in\![0,1]$};
+\node[io,right=9mm of mask] (out) {Stems\\$\hat y_c$};
 \draw[arr] (in)--(stft); \draw[arr] (stft)--(bank);
 \draw[arr] (bank)--(mask); \draw[arr] (mask)--(out);
-\end{tikzpicture}\\[0.4ex]
+\end{tikzpicture}}\\[0.5ex]
 {\footnotesize Each separator outputs a \lead{time-frequency mask} $\bm{M}_c$ that keeps a
 fraction of every spectrogram cell; the original \lead{mixture phase} is reused to
 turn the masked magnitude back into audio.}
@@ -213,23 +214,24 @@ This is LISTA, specialized to non-negative codes and a masking output.
 
 \begin{block}{Inside the deep coder: one composite module}
 \centering
+\resizebox{\linewidth}{!}{%
 \begin{tikzpicture}[font=\small,
-  io/.style={draw,rounded corners=2pt,align=center,minimum height=10mm,
-             minimum width=15mm,fill=dgreenL,line width=0.6pt,inner sep=2pt},
-  vec/.style={draw,align=center,line width=0.8pt,minimum width=10mm,inner sep=2pt},
-  arr/.style={-{Stealth[length=2.6mm]},line width=0.9pt,draw=dgreen}]
+  io/.style={draw,rounded corners=2pt,align=center,minimum height=11mm,
+             minimum width=17mm,fill=dgreenL,line width=0.7pt,inner sep=2pt},
+  vec/.style={draw,align=center,line width=0.8pt,minimum width=11mm,inner sep=2pt},
+  arr/.style={-{Stealth[length=3mm]},line width=1pt,draw=dgreen}]
 \node[io] (x) {frame $\bm{x}$\\\scriptsize$\R^{F}$};
-\node[vec,fill=purpleA!18,minimum height=18mm,right=22mm of x] (a1)
+\node[vec,fill=purpleA!18,minimum height=22mm,right=24mm of x] (a1)
      {$\bm{\alpha}^{(1)}$\\\scriptsize$\R^{n_u}$};
-\node[vec,fill=accent!22,minimum height=9mm,right=22mm of a1] (a2)
+\node[vec,fill=accent!22,minimum height=11mm,right=24mm of a1] (a2)
      {$\bm{\alpha}^{(2)}$\\\scriptsize$\R^{n_d}$};
-\node[io,right=18mm of a2] (out) {next\\module};
+\node[io,right=20mm of a2] (out) {next\\module};
 \draw[arr] (x)--(a1) node[midway,above,align=center,font=\footnotesize,text=ink]
      {\textbf{fat} $\bm{D}^{(1)}$\\upsample};
 \draw[arr] (a1)--(a2) node[midway,above,align=center,font=\footnotesize,text=ink]
      {\textbf{tall} $\bm{D}^{(2)}$\\downsample};
 \draw[arr] (a2)--(out);
-\end{tikzpicture}\\[0.4ex]
+\end{tikzpicture}}\\[0.4ex]
 {\footnotesize A \leadA{fat dictionary} lifts the frame into a tall over-complete
 sparse code $\bm{\alpha}^{(1)}$; a \leadA{tall dictionary} compresses it to a short
 code $\bm{\alpha}^{(2)}$ (a clustering effect). Stacking $L_m\!=\!4$ such modules,
@@ -284,17 +286,12 @@ Oracle IRM / IBM   & $10.2$  & $15.8$ & --- \\
 \end{tabular}
 \vskip0.4ex
 \begin{figure}
-\includegraphics[width=0.62\linewidth]{fig_results_bars.pdf}
+\includegraphics[width=0.72\linewidth]{fig_results_bars.pdf}
 \end{figure}
 \begin{itemize}
-\item \lead{Adding structure-learning monotonically helps:}
-training-free ($<\!0$ dB) $\to$ supervised dictionaries ($+5$ to $+7$ dB) $\to$
-deep unrolled coder ($+8.3$ dB).
-\item \lead{The deep coder wins on every axis:} best vocals (\underline{$2.0$ dB},
-$2.5\times$ the best classical method), best accompaniment (\underline{$8.3$ dB}),
-and \underline{fastest learned model} ($0.12$ s, one feed-forward pass).
-\item \lead{It reaches $54\%$ of the oracle} accompaniment ceiling, versus
-$\le47\%$ for any classical method.
+\item \lead{Clear ordering:} training-free $<$ supervised $<$ deep.
+\item \lead{Best of both:} the deep coder wins on both sources \emph{and} is the
+fastest learned model. Soft masks add $+1$ dB over hard masks.
 \end{itemize}
 \end{block}
 
@@ -323,7 +320,7 @@ Vocal SI-SDR & $-3.9$ & $-3.6$ & $-3.2$ & $\bm{-2.3}$ \\
 
 \begin{block}{Honest negative result: coherence}
 \begin{figure}
-\includegraphics[width=0.43\linewidth]{fig_ksvd_coherence.pdf}
+\includegraphics[width=0.55\linewidth]{fig_ksvd_coherence.pdf}
 \end{figure}
 Learned dictionaries are \textbf{coherent} ($\mu\!\approx\!0.85$), so the worst-case
 theorem certifies recovery only for $s\!\lesssim\!1$, yet $s\!=\!10$ works in
