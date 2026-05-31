@@ -8,8 +8,9 @@
 \usetikzlibrary{arrows.meta,positioning,fit,backgrounds,calc}
 \usepackage{xcolor}
 \usepackage{colortbl}
+\usepackage{wasysym}
 
-\graphicspath{{../figures/}}
+\graphicspath{{../figures/}{./}}
 
 % ---------- Colour palette ----------
 \definecolor{dgreen}{HTML}{0B4F2F}
@@ -64,21 +65,39 @@
 \newcommand{\separatorcolumn}{\begin{column}{\sepwidth}\end{column}}
 
 % Custom title header bar.
+\newcommand{\miniwave}{% white audio waveform morphing into a spectrogram chip
+  \begin{tikzpicture}[baseline]
+    \draw[white,line width=2pt,line cap=round]
+      (0,0) sin (0.55,0.7) cos (1.1,0) sin (1.65,-0.7) cos (2.2,0)
+            sin (2.7,0.5) cos (3.2,0) sin (3.7,-0.5) cos (4.2,0);
+  \end{tikzpicture}}
 \setbeamertemplate{headline}{
   \begin{beamercolorbox}[wd=\paperwidth]{block title}
-  \vskip1.0ex
-  \begin{columns}
-    \begin{column}{0.04\paperwidth}\end{column}
-    \begin{column}{0.92\paperwidth}\centering
-      \color{white}{\veryHuge\textbf{Sparse, Low-Rank, and Deep}}\\[0.3ex]
-      {\LARGE A Unified Compressed-Sensing Framework for Music Source Separation}\\[0.5ex]
-      {\large Taka Khoo \quad$\bullet$\quad Thayer School of Engineering, Dartmouth College
-      \quad$\bullet$\quad ENGS 109}\\[0.35ex]
-      {\normalsize\ttfamily github.com/takakhoo/ENGS109\_Final\_Project}
+  \vskip0.9ex
+  \begin{columns}[c]
+    \begin{column}{0.015\paperwidth}\end{column}
+    % --- Left: Dartmouth Engineering logo on a white card ---
+    \begin{column}{0.205\paperwidth}\centering
+      \colorbox{white}{\rule[-1.7cm]{0pt}{4.0cm}%
+        \raisebox{-1.15cm}{\includegraphics[height=3.0cm]{thayer-logo.png}}\hspace{2mm}}
     \end{column}
-    \begin{column}{0.04\paperwidth}\end{column}
+    % --- Center: title ---
+    \begin{column}{0.56\paperwidth}\centering
+      \color{white}{\veryHuge\textbf{Unmixing the Music}}\\[0.4ex]
+      {\large\itshape The Sound of Sparsity}\\[0.5ex]
+      {\Large Sparse, Low-Rank, and Deep: A Compressed-Sensing Approach to Source Separation}\\[0.55ex]
+      {\large Taka Khoo \quad$\bullet$\quad Thayer School of Engineering, Dartmouth College
+      \quad$\bullet$\quad ENGS 109}
+    \end{column}
+    % --- Right: music-themed decoration ---
+    \begin{column}{0.205\paperwidth}\centering
+      {\color{white}\Huge \twonotes\;\eighthnote\;\quarternote\;\eighthnote}\\[1.2ex]
+      \miniwave\\[1.0ex]
+      {\color{white}\Large \eighthnote\;\quarternote\;\twonotes}
+    \end{column}
+    \begin{column}{0.015\paperwidth}\end{column}
   \end{columns}
-  \vskip1.0ex
+  \vskip0.9ex
   \end{beamercolorbox}
 }
 
@@ -161,23 +180,23 @@ that principal component pursuit provably separates.
 \begin{block}{One Front End, Four Separators}
 \centering
 \begin{tikzpicture}[font=\small,
-  io/.style={draw,rounded corners=2pt,align=center,minimum height=12mm,
-             minimum width=18mm,fill=dgreenL,line width=0.6pt,inner sep=2pt},
-  bank/.style={draw,rounded corners=3pt,align=left,fill=white,line width=0.8pt,inner sep=4pt},
-  arr/.style={-{Stealth[length=2.6mm]},line width=0.9pt,draw=dgreen}]
+  io/.style={draw,rounded corners=3pt,align=center,minimum height=16mm,
+             minimum width=24mm,fill=dgreenL,line width=0.8pt,inner sep=5pt},
+  bank/.style={draw,rounded corners=4pt,align=left,fill=white,line width=1pt,inner sep=7pt},
+  arr/.style={-{Stealth[length=3mm]},line width=1pt,draw=dgreen}]
 \node[io] (in) {Mixture\\$y(t)$};
-\node[io,right=7mm of in] (stft) {STFT\\$\bm{M},\,\angle\bm{Y}$};
-\node[bank,right=8mm of stft] (bank) {%
-  \underline{\textbf{pick one separator}}\\[1.2mm]
-  $\bullet$~Robust PCA {\footnotesize(low-rank $+$ sparse)}\\[0.6mm]
-  $\bullet$~Supervised NMF {\footnotesize(class dict.)}\\[0.6mm]
-  $\bullet$~K-SVD $+$ SRC {\footnotesize(learned dict.)}\\[0.6mm]
+\node[io,right=13mm of in] (stft) {STFT\\$\bm{M},\,\angle\bm{Y}$};
+\node[bank,right=14mm of stft] (bank) {%
+  \underline{\textbf{pick one separator}}\\[1.8mm]
+  $\bullet$~Robust PCA {\footnotesize(low-rank $+$ sparse)}\\[1.2mm]
+  $\bullet$~Supervised NMF {\footnotesize(class dict.)}\\[1.2mm]
+  $\bullet$~K-SVD $+$ SRC {\footnotesize(learned dict.)}\\[1.2mm]
   {\color{accent}$\bigstar$~\textbf{Deep sparse coder} {\footnotesize(ours)}}};
-\node[io,right=8mm of bank] (mask) {Soft\\mask $\bm{M}_c$};
-\node[io,right=7mm of mask] (out) {Stems\\$\hat y_c$};
+\node[io,right=14mm of bank] (mask) {Soft\\mask $\bm{M}_c$};
+\node[io,right=13mm of mask] (out) {Stems\\$\hat y_c$};
 \draw[arr] (in)--(stft); \draw[arr] (stft)--(bank);
 \draw[arr] (bank)--(mask); \draw[arr] (mask)--(out);
-\end{tikzpicture}\\[0.4ex]
+\end{tikzpicture}\\[0.6ex]
 {\footnotesize Each separator outputs a \lead{time-frequency mask} $\bm{M}_c$ that keeps a
 fraction of every spectrogram cell; the original \lead{mixture phase} is reused to
 turn the masked magnitude back into audio.}
@@ -215,18 +234,18 @@ This is LISTA, specialized to non-negative codes and a masking output.
 \begin{block}{Inside the Deep Coder: One Composite Module}
 \centering
 \begin{tikzpicture}[font=\normalsize,
-  io/.style={draw,rounded corners=3pt,align=center,minimum height=16mm,
-             minimum width=26mm,fill=dgreenL,line width=0.9pt,inner sep=3pt},
-  tallb/.style={draw,rounded corners=2pt,align=center,minimum width=22mm,
-                minimum height=30mm,fill=purpleA!16,line width=1pt,inner sep=3pt},
-  shortb/.style={draw,rounded corners=2pt,align=center,minimum width=22mm,
-                 minimum height=15mm,fill=accent!20,line width=1pt,inner sep=3pt},
-  lbl/.style={fill=white,inner sep=3pt,font=\small,align=center,text=ink},
+  io/.style={draw,rounded corners=3pt,align=center,minimum height=18mm,
+             minimum width=30mm,fill=dgreenL,line width=0.9pt,inner sep=6pt},
+  tallb/.style={draw,rounded corners=2pt,align=center,minimum width=26mm,
+                minimum height=32mm,fill=purpleA!16,line width=1pt,inner sep=6pt},
+  shortb/.style={draw,rounded corners=2pt,align=center,minimum width=26mm,
+                 minimum height=17mm,fill=accent!20,line width=1pt,inner sep=6pt},
+  lbl/.style={fill=white,inner sep=4pt,font=\small,align=center,text=ink},
   arr/.style={-{Stealth[length=4mm]},line width=1.3pt,draw=dgreen}]
 \node[io] (x) {frame\\$\bm{x}\in\R^{F}$};
-\node[tallb,right=72mm of x] (a1) {$\bm{\alpha}^{(1)}$\\[2pt]\footnotesize$\R^{n_u}$};
-\node[shortb,right=72mm of a1] (a2) {$\bm{\alpha}^{(2)}$\\[2pt]\footnotesize$\R^{n_d}$};
-\node[io,right=62mm of a2] (out) {next\\module};
+\node[tallb,right=64mm of x] (a1) {$\bm{\alpha}^{(1)}$\\[2pt]\footnotesize$\R^{n_u}$};
+\node[shortb,right=64mm of a1] (a2) {$\bm{\alpha}^{(2)}$\\[2pt]\footnotesize$\R^{n_d}$};
+\node[io,right=56mm of a2] (out) {next\\module};
 \draw[arr] (x)--(a1);
 \node[lbl] at ($(x)!0.5!(a1)$) {\textbf{fat} $\bm{D}^{(1)}$\\[-1pt]upsample};
 \draw[arr] (a1)--(a2);
