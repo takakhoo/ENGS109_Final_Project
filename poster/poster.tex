@@ -136,6 +136,21 @@ surrogate for rank.
 \end{itemize}
 \end{block}
 
+\begin{block}{Why music lands in the recoverable regime}
+The numbers from a real clip ($f_s\!=\!22$ kHz, $2048$-pt STFT) put us inside the
+guarantees above:
+\begin{itemize}
+\item \lead{Dimensions:} $F\!=\!1025$ frequency bins, $T\!\approx\!340$ frames per
+$8$\,s, so the spectrogram is a $1025\!\times\!340$ image.
+\item \lead{Vocals are very sparse:} a frame activates $s\!\approx\!10$ harmonic
+atoms out of a $K\!=\!96$ dictionary, so the active fraction is $\sim\!10\%$.
+\item \lead{Accompaniment is very low rank:} the magnitude spectrum's singular
+values collapse after $r\!\approx\!4$--$8$ components (Fig.~5, right), $r\!\ll\!\min(F,T)$.
+\end{itemize}
+Sparse vocals $+$ low-rank accompaniment is exactly the low-rank-plus-sparse model
+that principal component pursuit provably separates.
+\end{block}
+
 \end{column}
 \separatorcolumn
 
@@ -196,6 +211,43 @@ solved by $K$ unrolled proximal-gradient steps (all matmul + clamp, runs on GPU)
 $\norm{(\bm{M}_v-\bm{M}_v^{\mathrm{IRM}})\!\odot\!\bm{M}}_1+\beta\sum_\ell\norm{\bm{\alpha}^{(\ell)}}_1$.
 This is LISTA, specialized to non-negative codes and a masking output.
 \end{alertblock}
+
+\begin{block}{Inside the deep coder: one composite module}
+\centering
+\begin{tikzpicture}[font=\footnotesize,
+  sig/.style={draw,rounded corners=1pt,align=center,minimum height=8mm,
+              minimum width=15mm,fill=dgreenL,line width=0.5pt,inner sep=2pt},
+  fat/.style={draw,align=center,minimum height=15mm,minimum width=10mm,
+              fill=purpleA!18,line width=0.5pt},
+  tall/.style={draw,align=center,minimum height=8mm,minimum width=10mm,
+               fill=accent!20,line width=0.5pt},
+  arr/.style={-{Stealth[length=1.8mm]},line width=0.6pt}]
+\node[sig] (x) {$\bm{x}$\\\scriptsize$F$};
+\node[fat,right=7mm of x] (a1) {$\bm{\alpha}^{(1)}$};
+\node[tall,right=7mm of a1] (a2) {$\bm{\alpha}^{(2)}$};
+\node[sig,right=7mm of a2] (out) {out\\\scriptsize$n_d$};
+\draw[arr] (x)--(a1) node[midway,above,align=center]{\scriptsize fat $\bm{D}^{(1)}$\\[-2pt]\scriptsize upsample};
+\draw[arr] (a1)--(a2) node[midway,above,align=center]{\scriptsize tall $\bm{D}^{(2)}$\\[-2pt]\scriptsize downsample};
+\draw[arr] (a2)--(out);
+\end{tikzpicture}\\[0.2ex]
+{\footnotesize A \leadA{fat} sparse code lifts the frame into an overcomplete
+space; a \leadA{tall} sparse code compresses it (a clustering effect). Stack
+$L_m\!=\!4$ such modules, then a sigmoid head emits the mask.}
+\end{block}
+
+\begin{block}{Why unrolling wins}
+\begin{itemize}
+\item \lead{Every layer is a real solver step.} Eq.\ above is one accelerated
+proximal-gradient (FISTA) iteration; run forever it hits the optimal
+$O(1/k^2)$ rate, but we stop at $K$ learned steps.
+\item \lead{Interpretable parameters.} The weights \emph{are} dictionaries and
+shrinkage thresholds, not opaque filters.
+\item \lead{Cheap and small.} One forward pass, $0.3$M parameters, no
+test-time optimization, runs on a laptop GPU.
+\item \lead{Temporal context.} A $\pm2$-frame window feeds each prediction, so the
+coder sees local time structure.
+\end{itemize}
+\end{block}
 
 \begin{block}{Stereo as joint sparsity}
 \lead{Two channels, one support.} Left and right share the same active sources, so

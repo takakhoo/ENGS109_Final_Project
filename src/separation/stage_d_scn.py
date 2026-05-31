@@ -20,7 +20,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from .features import stft, istft, magphase, mel_spectrogram, SR, N_FFT, HOP
+from .features import stft, istft, magphase, mel_spectrogram, stack_context, SR, N_FFT, HOP
 
 
 def power_iteration_sq_norm(D: torch.Tensor, n_iter: int = 20) -> torch.Tensor:
@@ -80,12 +80,14 @@ class CompositeModule(nn.Module):
 class SparseNet(nn.Module):
     """Stack of composite modules + a linear mask head with sigmoid output.
 
-    Operates frame-wise: input is a batch of magnitude spectrogram columns
-    (B, F_in); output is a soft mask (B, F_out) over the same frequency axis.
+    Operates frame-wise on a temporal context window: input is a batch of stacked
+    magnitude columns (B, F_in) with F_in = (2*context+1)*F_out; output is a soft
+    mask (B, F_out) for the center frame's frequency axis.
     """
 
     def __init__(self, f_in: int, n_modules: int = 3, n_up: int = 128,
-                 n_down: int = 64, n_fista: int = 20, f_out: int | None = None):
+                 n_down: int = 64, n_fista: int = 20, f_out: int | None = None,
+                 context: int = 0):
         super().__init__()
         f_out = f_out or f_in
         dims = [f_in] + [n_down] * n_modules
@@ -96,6 +98,7 @@ class SparseNet(nn.Module):
         self.head = nn.Linear(n_down, f_out)
         self.f_in = f_in
         self.f_out = f_out
+        self.context = context
 
     def forward(self, X: torch.Tensor):
         codes = []
@@ -132,7 +135,11 @@ def separate(y: np.ndarray, model: SparseNet, device: torch.device | None = None
     device = device or next(model.parameters()).device
     Y = stft(y)
     M, phase = magphase(Y)               # M: (F, T)
-    X = torch.tensor(M.T, dtype=torch.float32, device=device)  # (T, F)
+    Xin = M.T                            # (T, F)
+    ctx = getattr(model, "context", 0)
+    if ctx > 0:
+        Xin = stack_context(Xin, ctx)    # (T, (2c+1)F)
+    X = torch.tensor(Xin, dtype=torch.float32, device=device)
     mask, _ = model(X)                    # (T, F)
     mask_v = mask.T.cpu().numpy()
     y_v = istft(mask_v * M * phase, length=len(y))

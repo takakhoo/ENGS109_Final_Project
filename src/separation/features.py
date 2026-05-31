@@ -70,3 +70,18 @@ def cqt(y: np.ndarray, sr: int = SR, hop: int = HOP, n_bins: int = 84,
 def to_db(mag: np.ndarray, ref=np.max) -> np.ndarray:
     """Amplitude -> dB for plotting."""
     return librosa.amplitude_to_db(np.maximum(mag, 1e-9), ref=ref)
+
+
+def stack_context(X: np.ndarray, context: int) -> np.ndarray:
+    """Stack a +/-context window of neighbouring frames into each input vector.
+
+    X: (T, F) magnitude frames. Returns (T, (2*context+1)*F). The center frame is
+    surrounded by its temporal neighbours so the model sees local time structure,
+    while the prediction target stays the center frame. Edge frames are repeated.
+    """
+    if context <= 0:
+        return X
+    T, F = X.shape
+    padded = np.pad(X, ((context, context), (0, 0)), mode="edge")
+    cols = [padded[c : c + T] for c in range(2 * context + 1)]
+    return np.concatenate(cols, axis=1)

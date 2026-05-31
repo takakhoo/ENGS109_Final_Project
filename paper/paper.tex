@@ -10,6 +10,8 @@
 \usepackage{xcolor}
 \usepackage{algorithm}
 \usepackage{algorithmic}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,fit,backgrounds,calc}
 
 \graphicspath{{../figures/}}
 
@@ -287,6 +289,62 @@ $\hat y_c=\STFT^{-1}(\M_c\odot\Y)$ using the mixture phase. Given non-negative
 source magnitude estimates $\widehat\M_c$, we use Wiener-style masks
 $\M_c=\widehat\M_c^{2}/\sum_k\widehat\M_k^{2}$.
 
+\begin{figure}[t]
+\centering
+\resizebox{\linewidth}{!}{%
+\begin{tikzpicture}[font=\small,
+  io/.style={draw,rounded corners=2pt,align=center,minimum height=8mm,
+             minimum width=14mm,fill=gray!8,line width=0.4pt,inner sep=2pt},
+  m/.style={draw,rounded corners=2pt,align=center,minimum height=6.5mm,
+            minimum width=30mm,fill=blue!6,line width=0.4pt,inner sep=2pt,font=\footnotesize},
+  ours/.style={m,fill=orange!12,draw=orange!70,line width=0.8pt},
+  arr/.style={-{Stealth[length=1.6mm]},line width=0.5pt}]
+\node[io] (in) {$y(t)$};
+\node[io,right=5mm of in] (stft) {STFT\\$\M,\angle\Y$};
+\node[io,right=34mm of stft] (mask) {mask\\$\M_c$};
+\node[io,right=5mm of mask] (out) {$\hat y_c$};
+\draw[arr] (in)--(stft); \draw[arr] (stft)--(mask); \draw[arr] (mask)--(out);
+\node[m,below=6mm of stft,xshift=22mm] (a) {\S\ref{sec:rpca} low-rank $+$ sparse};
+\node[m,below=2mm of a] (b) {\S\ref{sec:nmf} supervised NMF};
+\node[m,below=2mm of b] (c) {\S\ref{sec:ksvd} K-SVD $+$ SRC};
+\node[ours,below=2mm of c] (d) {\S\ref{sec:scn} deep sparse coder};
+\draw[arr] (stft.south) |- (a.west);
+\draw[arr] (a.east) -| (mask.south);
+\draw[arr] (d.east) -| ([xshift=2mm]mask.south);
+\begin{scope}[on background layer]
+\node[draw=gray!40,dashed,rounded corners,fit=(a)(d),inner sep=2mm,
+      label={[font=\footnotesize\itshape,gray]below:four interchangeable separators}] {};
+\end{scope}
+\end{tikzpicture}}
+\caption{The shared pipeline. All four methods estimate the same time-frequency
+mask $\M_c$ on one STFT front end and differ only in how they impose structure;
+resynthesis reuses the mixture phase.}
+\label{fig:pipeline}
+\end{figure}
+
+\Cref{fig:pipeline} shows the shared scaffolding. The methods differ only in the
+structural prior they place on the spectrogram, which lets us read them as points
+on a single structure-recovery axis (\cref{tab:taxonomy}).
+
+\begin{table}[t]
+\caption{The four separators as one family: each pairs a structural prior with a
+recovery penalty and a learning mode. $\norm{\cdot}_*$ is the nuclear norm.}
+\label{tab:taxonomy}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3.5pt}
+\begin{tabular}{@{}llll@{}}
+\toprule
+\textbf{Method} & \textbf{Prior} & \textbf{Penalty} & \textbf{Learning} \\
+\midrule
+RPCA      & low-rank$+$sparse & nuclear$+\ell_1$ & none \\
+NMF       & nonneg.\ parts    & KL div.\        & unsup. \\
+K-SVD     & sparse code       & $\ell_0\!\le\!s$ & unsup. \\
+SCN       & unrolled sparse   & elastic-net      & end-to-end \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 \subsection{Low-rank plus sparse (RPCA)}
 \label{sec:rpca}
 We solve \cref{eq:rpca} on the magnitude spectrogram by the inexact augmented
@@ -548,6 +606,42 @@ matching the mono K-SVD dictionary it is built on while producing a coherent ste
 image, since the shared row support forces the two channels to agree on active
 atoms. This confirms the joint-sparsity extension is sound; a larger stereo study is
 left to future work.
+
+\paragraph{Cost and the oracle gap.}
+\Cref{tab:complexity} contrasts model size and per-clip cost. The deep coder is the
+smallest learned model that we train and, because inference is a fixed number of
+matrix multiplies, the fastest at test time, an order of magnitude quicker than the
+iterative RPCA solve. \Cref{fig:gap} reframes the scores as the fraction of the IRM
+oracle each method reaches on accompaniment: the supervised methods recover roughly
+half of the oracle, the deep coder a little more, and a wide gap to the ceiling
+remains, set largely by mixture-phase magnitude masking.
+
+\begin{table}[t]
+\caption{Model size and per-clip cost. Trainable parameters count learned
+dictionaries and shrinkage parameters; classical methods store fixed dictionaries.}
+\label{tab:complexity}
+\centering
+\small
+\begin{tabular}{@{}lccc@{}}
+\toprule
+\textbf{Method} & \textbf{Train?} & \textbf{Params} & \textbf{Test (s)} \\
+\midrule
+RPCA       & no  & ---            & $1.14$ \\
+NMF        & dict.\ only & $0.13$M  & $0.46$ \\
+K-SVD      & dict.\ only & $0.20$M  & $0.28$ \\
+SCN (ours) & end-to-end  & $0.32$M  & $0.08$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.82\linewidth]{fig_oracle_gap.pdf}
+\caption{Fraction of the ideal-ratio-mask oracle accompaniment SI-SDR reached by
+each method. A large headroom to the ceiling remains, dominated by the mixture-phase
+magnitude-masking assumption.}
+\label{fig:gap}
+\end{figure}
 
 \begin{figure}[t]
 \centering

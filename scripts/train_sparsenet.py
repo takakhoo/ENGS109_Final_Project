@@ -19,7 +19,7 @@ from pathlib import Path
 import numpy as np
 import torch
 
-from separation.features import stft, magphase, SR
+from separation.features import stft, magphase, stack_context, SR
 from separation.io import get_musdb, track_to_mono
 from separation.stage_d_scn import SparseNet, sparsity_fraction, device_auto
 
@@ -27,8 +27,8 @@ REPO = Path(__file__).resolve().parents[1]
 OUT = REPO / "experiments" / "sparsenet"
 
 
-def build_frames(tracks, seconds: float = 6.0, eps: float = 1e-9):
-    """Return (X mix frames, Y target masks) as float32 arrays, shape (N, F)."""
+def build_frames(tracks, seconds: float = 6.0, context: int = 0, eps: float = 1e-9):
+    """Return (X mix frames with context, Y center-frame masks), shape (N, *)."""
     Xs, Ys = [], []
     for tr in tracks:
         stems = track_to_mono(tr)
@@ -44,8 +44,8 @@ def build_frames(tracks, seconds: float = 6.0, eps: float = 1e-9):
         T = min(Mmix.shape[1], Mv.shape[1], Ma.shape[1])
         Mmix, Mv, Ma = Mmix[:, :T], Mv[:, :T], Ma[:, :T]
         irm = Mv / (Mv + Ma + eps)            # ideal ratio mask for vocals
-        Xs.append(Mmix.T)                     # (T, F)
-        Ys.append(irm.T)
+        Xs.append(stack_context(Mmix.T, context))   # (T, (2c+1)F)
+        Ys.append(irm.T)                      # (T, F)
     X = np.concatenate(Xs, axis=0).astype(np.float32)
     Y = np.concatenate(Ys, axis=0).astype(np.float32)
     return X, Y
@@ -62,6 +62,9 @@ def main():
     ap.add_argument("--n_down", type=int, default=64)
     ap.add_argument("--n_fista", type=int, default=15)
     ap.add_argument("--mu_sparse", type=float, default=1e-3)
+    ap.add_argument("--context", type=int, default=0)
+    ap.add_argument("--seconds", type=float, default=6.0)
+    ap.add_argument("--out", type=str, default="model.pth")
     args = ap.parse_args()
 
     OUT.mkdir(parents=True, exist_ok=True)
@@ -70,17 +73,19 @@ def main():
 
     mus = get_musdb(subsets="train")
     tracks = list(mus)[: args.n_train]
-    print(f"Building frames from {len(tracks)} tracks...")
-    X, Y = build_frames(tracks)
+    print(f"Building frames from {len(tracks)} tracks (context={args.context})...")
+    X, Y = build_frames(tracks, seconds=args.seconds, context=args.context)
     print(f"  frames: X={X.shape}, Y={Y.shape}")
-    F = X.shape[1]
+    F_in = X.shape[1]
+    F_out = Y.shape[1]
 
     Xt = torch.tensor(X, device=device)
     Yt = torch.tensor(Y, device=device)
     n = Xt.shape[0]
 
-    model = SparseNet(f_in=F, n_modules=args.n_modules, n_up=args.n_up,
-                      n_down=args.n_down, n_fista=args.n_fista).to(device)
+    model = SparseNet(f_in=F_in, n_modules=args.n_modules, n_up=args.n_up,
+                      n_down=args.n_down, n_fista=args.n_fista,
+                      f_out=F_out, context=args.context).to(device)
     n_params = sum(p.numel() for p in model.parameters())
     print(f"SparseNet params: {n_params:,}")
     opt = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=1e-5)
@@ -92,11 +97,13 @@ def main():
         ep_loss = 0.0
         ep_sparsity = 0.0
         n_batches = 0
+        c0 = args.context * F_out  # center-frame slice in the context window
         for i in range(0, n, args.batch):
             idx = perm[i : i + args.batch]
             xb, yb = Xt[idx], Yt[idx]
+            xc = xb[:, c0 : c0 + F_out]      # center frame magnitude (B, F_out)
             mask, codes = model(xb)
-            recon_loss = (mask * xb - yb * xb).abs().mean()
+            recon_loss = ((mask - yb) * xc).abs().mean()
             sparse_loss = sum(c.abs().mean() for c in codes) / len(codes)
             loss = recon_loss + args.mu_sparse * sparse_loss
             opt.zero_grad()
@@ -113,11 +120,12 @@ def main():
                   f"code_sparsity {ep_sparsity/n_batches:.3f}")
 
     torch.save({"state_dict": model.state_dict(),
-                "config": {"f_in": F, "n_modules": args.n_modules, "n_up": args.n_up,
-                           "n_down": args.n_down, "n_fista": args.n_fista},
-                "history": history, "n_params": n_params}, OUT / "model.pth")
-    np.save(OUT / "history.npy", history)
-    print(f"Saved model to {OUT/'model.pth'}")
+                "config": {"f_in": F_in, "n_modules": args.n_modules, "n_up": args.n_up,
+                           "n_down": args.n_down, "n_fista": args.n_fista,
+                           "f_out": F_out, "context": args.context},
+                "history": history, "n_params": n_params}, OUT / args.out)
+    np.save(OUT / (args.out.replace(".pth", "_history.npy")), history)
+    print(f"Saved model to {OUT/args.out} ({n_params:,} params)")
 
 
 if __name__ == "__main__":
