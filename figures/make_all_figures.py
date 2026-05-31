@@ -142,7 +142,7 @@ def main():
         ax.axvline(welch, color="orange", ls=":", lw=1.2, label=fr"Welch bound ${welch:.3f}$")
     # Exact-recovery sparsity from L7: S < 0.5(1 + 1/mu).
     S_rec = 0.5 * (1 + 1 / mu)
-    ax.set_title(f"K-SVD vocal dictionary coherence (L7: exact recovery for $S<{S_rec:.1f}$)")
+    ax.set_title(f"K-SVD vocal dictionary coherence (exact recovery certified for $s<{S_rec:.1f}$)")
     ax.set_xlabel(r"$|\langle d_i, d_j\rangle|$"); ax.set_ylabel("count")
     ax.legend(fontsize=7); fig.tight_layout()
     fig.savefig(OUT / "fig_ksvd_coherence.pdf"); plt.close(fig)
@@ -162,36 +162,64 @@ def main():
         ax2 = ax1.twinx()
         ax2.plot(ep, sp, color="#7A1F8B", lw=1.5, ls="--", label="code sparsity")
         ax2.set_ylabel("fraction of zero codes", color="#7A1F8B")
-        ax1.set_title("SparseNet end-to-end training (L16)")
+        ax1.set_title("Deep sparse coding network: end-to-end training")
         fig.tight_layout(); fig.savefig(OUT / "fig_sparsenet_train.pdf"); plt.close(fig)
 
-    # --- 7. Results bar chart ---
+    # --- 7. Results bar chart (8 methods incl baselines + oracles) ---
     print("[7] results bars")
-    if (RESULTS / "summary.json").exists():
-        summary = json.load(open(RESULTS / "summary.json"))
-        stages = [s for s in ["A", "B", "C", "D", "oracle"] if s in summary]
-        labels = {"A": "A: RPCA\n(L13)", "B": "B: NMF\n(L15)", "C": "C: K-SVD\n(L14/8)",
-                  "D": "D: SparseNet\n(L16)", "oracle": "Oracle\n(IRM)"}
-        voc = [summary[s].get("vocals_si_sdr_median", np.nan) for s in stages]
-        acc = [summary[s].get("acc_si_sdr_median", np.nan) for s in stages]
-        x = np.arange(len(stages)); w = 0.38
-        fig, ax = plt.subplots(figsize=(6.5, 3.0))
+    if (RESULTS / "main_summary.json").exists():
+        summary = json.load(open(RESULTS / "main_summary.json"))
+        order = ["hpss", "repet", "rpca", "nmf", "ksvd", "scn", "oracle_irm", "oracle_ibm"]
+        labels = {"hpss": "HPSS", "repet": "REPET", "rpca": "RPCA", "nmf": "NMF",
+                  "ksvd": "K-SVD", "scn": "SCN\n(ours)", "oracle_irm": "IRM\n(oracle)",
+                  "oracle_ibm": "IBM\n(oracle)"}
+        order = [m for m in order if m in summary]
+        voc = [summary[m].get("vocals_si_sdr_median", np.nan) for m in order]
+        acc = [summary[m].get("acc_si_sdr_median", np.nan) for m in order]
+        x = np.arange(len(order)); w = 0.4
+        fig, ax = plt.subplots(figsize=(7.0, 3.1))
+        cols_v = ["#B0B0B0"]*2 + ["#9C4DCC"]*4 + ["#5A5A5A"]*2
+        cols_a = ["#B0B0B0"]*2 + ["#1B7A3D"]*4 + ["#5A5A5A"]*2
         b1 = ax.bar(x - w/2, voc, w, label="vocals", color="#7A1F8B")
         b2 = ax.bar(x + w/2, acc, w, label="accompaniment", color="#0B4F2F")
-        if "oracle" in stages:
-            oi = stages.index("oracle")
-            ax.axhline(voc[oi], color="#7A1F8B", ls=":", lw=1, alpha=0.6)
-            ax.axhline(acc[oi], color="#0B4F2F", ls=":", lw=1, alpha=0.6)
+        if "oracle_irm" in order:
+            oi = order.index("oracle_irm")
+            ax.axhline(voc[oi], color="#7A1F8B", ls=":", lw=1, alpha=0.5)
+            ax.axhline(acc[oi], color="#0B4F2F", ls=":", lw=1, alpha=0.5)
         ax.axhline(0, color="k", lw=0.6)
-        ax.set_xticks(x); ax.set_xticklabels([labels[s] for s in stages], fontsize=8)
+        ax.set_xticks(x); ax.set_xticklabels([labels[m] for m in order], fontsize=8)
         ax.set_ylabel("median SI-SDR (dB)")
-        ax.set_title("Separation quality by stage (MUSDB18 sample test)")
-        ax.legend(fontsize=8); ax.grid(axis="y", alpha=0.3)
+        ax.set_title("Separation quality: training-free, supervised, deep, oracle")
+        ax.legend(fontsize=8, loc="lower right"); ax.grid(axis="y", alpha=0.3)
         for b in list(b1) + list(b2):
             h = b.get_height()
             ax.annotate(f"{h:.1f}", (b.get_x() + b.get_width()/2, h),
-                        ha="center", va="bottom" if h >= 0 else "top", fontsize=6.5)
+                        ha="center", va="bottom" if h >= 0 else "top", fontsize=6)
         fig.tight_layout(); fig.savefig(OUT / "fig_results_bars.pdf"); plt.close(fig)
+
+    # --- 7b. Ablation panels ---
+    print("[7b] ablation panels")
+    import csv as _csv
+    def load_csv(p):
+        with open(p) as f:
+            return list(_csv.DictReader(f))
+    abl_files = {"nmf": ("ablation_nmf.csv", "K", "NMF atoms $K$"),
+                 "ksvd": ("ablation_ksvd.csv", "S", "K-SVD sparsity $s$"),
+                 "rpca": ("ablation_rpca.csv", "lambda_scale", r"RPCA $\lambda$ scale")}
+    if all((RESULTS / v[0]).exists() for v in abl_files.values()):
+        fig, axs = plt.subplots(1, 3, figsize=(9, 2.5))
+        for a, (key, (fn, xcol, xlabel)) in zip(axs, abl_files.items()):
+            rows = load_csv(RESULTS / fn)
+            xs = [float(r[xcol]) for r in rows]
+            vv = [float(r["vocals_si_sdr"]) for r in rows]
+            aa = [float(r["acc_si_sdr"]) for r in rows]
+            a.plot(xs, vv, "o-", color="#7A1F8B", label="vocals", lw=1.5)
+            a.plot(xs, aa, "s--", color="#0B4F2F", label="accomp.", lw=1.5)
+            a.set_xlabel(xlabel); a.grid(alpha=0.3)
+            if key == "nmf":
+                a.set_ylabel("median SI-SDR (dB)"); a.legend(fontsize=7)
+        fig.suptitle("Hyperparameter ablations", y=1.02)
+        fig.tight_layout(); fig.savefig(OUT / "fig_ablations.pdf"); plt.close(fig)
 
     # --- 8. Mask comparison: oracle vs NMF vs SparseNet ---
     print("[8] mask comparison")

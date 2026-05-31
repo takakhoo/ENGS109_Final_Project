@@ -1,0 +1,255 @@
+% ============ Datasets, metrics, evaluation ============
+@misc{rafii2017musdb18,
+  author = {Rafii, Zafar and Liutkus, Antoine and St{\"o}ter, Fabian-Robert and Mimilakis, Stylianos Ioannis and Bittner, Rachel},
+  title = {The {MUSDB18} Corpus for Music Separation},
+  year = {2017}, doi = {10.5281/zenodo.1117372}
+}
+@misc{rafii2019musdb18hq,
+  author = {Rafii, Zafar and Liutkus, Antoine and St{\"o}ter, Fabian-Robert and Mimilakis, Stylianos Ioannis and Bittner, Rachel},
+  title = {{MUSDB18-HQ}: An Uncompressed Version of {MUSDB18}},
+  year = {2019}, doi = {10.5281/zenodo.3338373}
+}
+@inproceedings{stoter2018sisec,
+  author = {St{\"o}ter, Fabian-Robert and Liutkus, Antoine and Ito, Nobutaka},
+  title = {The 2018 Signal Separation Evaluation Campaign},
+  booktitle = {Latent Variable Analysis and Signal Separation (LVA/ICA)},
+  volume = {10891}, pages = {293--305}, year = {2018}, publisher = {Springer}
+}
+@article{vincent2006bsseval,
+  author = {Vincent, Emmanuel and Gribonval, R{\'e}mi and F{\'e}votte, C{\'e}dric},
+  title = {Performance Measurement in Blind Audio Source Separation},
+  journal = {IEEE Trans. Audio, Speech, Language Process.},
+  volume = {14}, number = {4}, pages = {1462--1469}, year = {2006}
+}
+@inproceedings{leroux2019sdr,
+  author = {Le Roux, Jonathan and Wisdom, Scott and Erdogan, Hakan and Hershey, John R.},
+  title = {{SDR} -- Half-Baked or Well Done?},
+  booktitle = {IEEE Int. Conf. Acoustics, Speech and Signal Processing (ICASSP)},
+  pages = {626--630}, year = {2019}
+}
+@inproceedings{raffel2014mireval,
+  author = {Raffel, Colin and McFee, Brian and Humphrey, Eric J. and Salamon, Justin and Nieto, Oriol and Liang, Dawen and Ellis, Daniel P. W.},
+  title = {mir\_eval: A Transparent Implementation of Common {MIR} Metrics},
+  booktitle = {Int. Society for Music Information Retrieval (ISMIR)},
+  pages = {367--372}, year = {2014}
+}
+
+% ============ NMF for audio ============
+@article{lee1999nmf,
+  author = {Lee, Daniel D. and Seung, H. Sebastian},
+  title = {Learning the Parts of Objects by Non-Negative Matrix Factorization},
+  journal = {Nature}, volume = {401}, number = {6755}, pages = {788--791}, year = {1999}
+}
+@inproceedings{lee2000algorithms,
+  author = {Lee, Daniel D. and Seung, H. Sebastian},
+  title = {Algorithms for Non-negative Matrix Factorization},
+  booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
+  pages = {556--562}, year = {2000}
+}
+@inproceedings{smaragdis2003nmf,
+  author = {Smaragdis, Paris and Brown, Judith C.},
+  title = {Non-negative Matrix Factorization for Polyphonic Music Transcription},
+  booktitle = {IEEE Workshop on Applications of Signal Processing to Audio and Acoustics (WASPAA)},
+  pages = {177--180}, year = {2003}
+}
+@article{smaragdis2007convolutive,
+  author = {Smaragdis, Paris},
+  title = {Convolutive Speech Bases and Their Application to Supervised Speech Separation},
+  journal = {IEEE Trans. Audio, Speech, Language Process.},
+  volume = {15}, number = {1}, pages = {1--12}, year = {2007}
+}
+@article{fevotte2009isnmf,
+  author = {F{\'e}votte, C{\'e}dric and Bertin, Nancy and Durrieu, Jean-Louis},
+  title = {Nonnegative Matrix Factorization with the {Itakura-Saito} Divergence},
+  journal = {Neural Computation}, volume = {21}, number = {3}, pages = {793--830}, year = {2009}
+}
+@article{virtanen2007monaural,
+  author = {Virtanen, Tuomas},
+  title = {Monaural Sound Source Separation by Nonnegative Matrix Factorization with Temporal Continuity and Sparseness Criteria},
+  journal = {IEEE Trans. Audio, Speech, Language Process.},
+  volume = {15}, number = {3}, pages = {1066--1074}, year = {2007}
+}
+
+% ============ Robust PCA / low-rank ============
+@article{candes2011rpca,
+  author = {Cand{\`e}s, Emmanuel J. and Li, Xiaodong and Ma, Yi and Wright, John},
+  title = {Robust Principal Component Analysis?},
+  journal = {Journal of the ACM}, volume = {58}, number = {3}, pages = {1--37}, year = {2011}
+}
+@inproceedings{huang2012rpca,
+  author = {Huang, Po-Sen and Chen, Scott Deeann and Smaragdis, Paris and Hasegawa-Johnson, Mark},
+  title = {Singing-Voice Separation from Monaural Recordings Using Robust Principal Component Analysis},
+  booktitle = {IEEE Int. Conf. Acoustics, Speech and Signal Processing (ICASSP)},
+  pages = {57--60}, year = {2012}
+}
+@article{candes2009matrixcompletion,
+  author = {Cand{\`e}s, Emmanuel J. and Recht, Benjamin},
+  title = {Exact Matrix Completion via Convex Optimization},
+  journal = {Foundations of Computational Mathematics},
+  volume = {9}, number = {6}, pages = {717--772}, year = {2009}
+}
+@article{rafii2013repet,
+  author = {Rafii, Zafar and Pardo, Bryan},
+  title = {{REPET}: A Simple Method for Music/Voice Separation},
+  journal = {IEEE Trans. Audio, Speech, Language Process.},
+  volume = {21}, number = {1}, pages = {73--84}, year = {2013}
+}
+@inproceedings{fitzgerald2010hpss,
+  author = {FitzGerald, Derry},
+  title = {Harmonic/Percussive Separation Using Median Filtering},
+  booktitle = {Int. Conf. on Digital Audio Effects (DAFx)}, year = {2010}
+}
+
+% ============ Dictionary learning / sparse representation ============
+@article{aharon2006ksvd,
+  author = {Aharon, Michal and Elad, Michael and Bruckstein, Alfred},
+  title = {{K-SVD}: An Algorithm for Designing Overcomplete Dictionaries for Sparse Representation},
+  journal = {IEEE Trans. Signal Processing}, volume = {54}, number = {11}, pages = {4311--4322}, year = {2006}
+}
+@inproceedings{mairal2009online,
+  author = {Mairal, Julien and Bach, Francis and Ponce, Jean and Sapiro, Guillermo},
+  title = {Online Dictionary Learning for Sparse Coding},
+  booktitle = {Int. Conf. on Machine Learning (ICML)}, pages = {689--696}, year = {2009}
+}
+@article{mairal2012taskdriven,
+  author = {Mairal, Julien and Bach, Francis and Ponce, Jean},
+  title = {Task-Driven Dictionary Learning},
+  journal = {IEEE Trans. Pattern Analysis and Machine Intelligence},
+  volume = {34}, number = {4}, pages = {791--804}, year = {2012}
+}
+@article{wright2009src,
+  author = {Wright, John and Yang, Allen Y. and Ganesh, Arvind and Sastry, S. Shankar and Ma, Yi},
+  title = {Robust Face Recognition via Sparse Representation},
+  journal = {IEEE Trans. Pattern Analysis and Machine Intelligence},
+  volume = {31}, number = {2}, pages = {210--227}, year = {2009}
+}
+@inproceedings{engan1999mod,
+  author = {Engan, Kjersti and Aase, Sven Ole and Hus{\o}y, John H{\aa}kon},
+  title = {Method of Optimal Directions for Frame Design},
+  booktitle = {IEEE Int. Conf. Acoustics, Speech, and Signal Processing (ICASSP)},
+  pages = {2443--2446}, year = {1999}
+}
+@article{donoho2006cs,
+  author = {Donoho, David L.},
+  title = {Compressed Sensing},
+  journal = {IEEE Trans. Information Theory}, volume = {52}, number = {4}, pages = {1289--1306}, year = {2006}
+}
+@article{candes2006rip,
+  author = {Cand{\`e}s, Emmanuel J. and Tao, Terence},
+  title = {Decoding by Linear Programming},
+  journal = {IEEE Trans. Information Theory}, volume = {51}, number = {12}, pages = {4203--4215}, year = {2005}
+}
+@article{tropp2007omp,
+  author = {Tropp, Joel A. and Gilbert, Anna C.},
+  title = {Signal Recovery from Random Measurements via Orthogonal Matching Pursuit},
+  journal = {IEEE Trans. Information Theory}, volume = {53}, number = {12}, pages = {4655--4666}, year = {2007}
+}
+@article{beck2009fista,
+  author = {Beck, Amir and Teboulle, Marc},
+  title = {A Fast Iterative Shrinkage-Thresholding Algorithm for Linear Inverse Problems},
+  journal = {SIAM Journal on Imaging Sciences}, volume = {2}, number = {1}, pages = {183--202}, year = {2009}
+}
+@article{tropp2006somp,
+  author = {Tropp, Joel A. and Gilbert, Anna C. and Strauss, Martin J.},
+  title = {Algorithms for Simultaneous Sparse Approximation. Part I: Greedy Pursuit},
+  journal = {Signal Processing}, volume = {86}, number = {3}, pages = {572--588}, year = {2006}
+}
+
+% ============ Deep learning source separation ============
+@article{hennequin2020spleeter,
+  author = {Hennequin, Romain and Khlif, Anis and Voituret, Felix and Moussallam, Manuel},
+  title = {Spleeter: A Fast and Efficient Music Source Separation Tool with Pre-Trained Models},
+  journal = {Journal of Open Source Software}, volume = {5}, number = {50}, pages = {2154}, year = {2020}
+}
+@article{stoter2019openunmix,
+  author = {St{\"o}ter, Fabian-Robert and Uhlich, Stefan and Liutkus, Antoine and Mitsufuji, Yuki},
+  title = {Open-Unmix -- A Reference Implementation for Music Source Separation},
+  journal = {Journal of Open Source Software}, volume = {4}, number = {41}, pages = {1667}, year = {2019}
+}
+@article{defossez2021demucs,
+  author = {D{\'e}fossez, Alexandre and Usunier, Nicolas and Bottou, L{\'e}on and Bach, Francis},
+  title = {Music Source Separation in the Waveform Domain},
+  journal = {arXiv:1911.13254}, year = {2021}
+}
+@inproceedings{defossez2021hybrid,
+  author = {D{\'e}fossez, Alexandre},
+  title = {Hybrid Spectrogram and Waveform Source Separation},
+  booktitle = {ISMIR Workshop on Music Source Separation (MDX)}, year = {2021}
+}
+@inproceedings{rouard2023htdemucs,
+  author = {Rouard, Simon and Massa, Francisco and D{\'e}fossez, Alexandre},
+  title = {Hybrid Transformers for Music Source Separation},
+  booktitle = {IEEE Int. Conf. Acoustics, Speech and Signal Processing (ICASSP)}, year = {2023}
+}
+@article{luo2019convtasnet,
+  author = {Luo, Yi and Mesgarani, Nima},
+  title = {Conv-{TasNet}: Surpassing Ideal Time-Frequency Magnitude Masking for Speech Separation},
+  journal = {IEEE/ACM Trans. Audio, Speech, Language Process.},
+  volume = {27}, number = {8}, pages = {1256--1266}, year = {2019}
+}
+@inproceedings{stoller2018waveunet,
+  author = {Stoller, Daniel and Ewert, Sebastian and Dixon, Simon},
+  title = {Wave-{U-Net}: A Multi-Scale Neural Network for End-to-End Audio Source Separation},
+  booktitle = {Int. Society for Music Information Retrieval (ISMIR)}, pages = {334--340}, year = {2018}
+}
+@inproceedings{jansson2017unet,
+  author = {Jansson, Andreas and Humphrey, Eric J. and Montecchio, Nicola and Bittner, Rachel and Kumar, Aparna and Weyde, Tillman},
+  title = {Singing Voice Separation with Deep {U-Net} Convolutional Networks},
+  booktitle = {Int. Society for Music Information Retrieval (ISMIR)}, pages = {745--751}, year = {2017}
+}
+
+% ============ Deep unfolding / sparse coding networks ============
+@inproceedings{gregor2010lista,
+  author = {Gregor, Karol and LeCun, Yann},
+  title = {Learning Fast Approximations of Sparse Coding},
+  booktitle = {Int. Conf. on Machine Learning (ICML)}, pages = {399--406}, year = {2010}
+}
+@article{papyan2017cnncsc,
+  author = {Papyan, Vardan and Romano, Yaniv and Elad, Michael},
+  title = {Convolutional Neural Networks Analyzed via Convolutional Sparse Coding},
+  journal = {Journal of Machine Learning Research}, volume = {18}, number = {83}, pages = {1--52}, year = {2017}
+}
+@article{monga2021unrolling,
+  author = {Monga, Vishal and Li, Yuelong and Eldar, Yonina C.},
+  title = {Algorithm Unrolling: Interpretable, Efficient Deep Learning for Signal and Image Processing},
+  journal = {IEEE Signal Processing Magazine}, volume = {38}, number = {2}, pages = {18--44}, year = {2021}
+}
+@article{sun2019scn,
+  author = {Sun, Xiaoxia and Nasrabadi, Nasser M. and Tran, Trac D.},
+  title = {Supervised Deep Sparse Coding Networks for Image Classification},
+  journal = {IEEE Trans. Image Processing}, volume = {29}, pages = {405--418}, year = {2019}
+}
+@article{sprechmann2015efficient,
+  author = {Sprechmann, Pablo and Bronstein, Alexander M. and Sapiro, Guillermo},
+  title = {Learning Efficient Sparse and Low-Rank Models},
+  journal = {IEEE Trans. Pattern Analysis and Machine Intelligence},
+  volume = {37}, number = {9}, pages = {1821--1833}, year = {2015}
+}
+@inproceedings{leroux2015deepnmf,
+  author = {Le Roux, Jonathan and Hershey, John R. and Weninger, Felix},
+  title = {Deep {NMF} for Speech Separation},
+  booktitle = {IEEE Int. Conf. Acoustics, Speech and Signal Processing (ICASSP)},
+  pages = {66--70}, year = {2015}
+}
+
+% ============ Surveys / state of the art ============
+@article{cano2019introduction,
+  author = {Cano, Estefan{\'i}a and FitzGerald, Derry and Liutkus, Antoine and Plumbley, Mark D. and St{\"o}ter, Fabian-Robert},
+  title = {Musical Source Separation: An Introduction},
+  journal = {IEEE Signal Processing Magazine}, volume = {36}, number = {1}, pages = {31--40}, year = {2019}
+}
+@article{mitsufuji2022mdx,
+  author = {Mitsufuji, Yuki and Fabbro, Giorgio and Uhlich, Stefan and St{\"o}ter, Fabian-Robert and D{\'e}fossez, Alexandre and Kim, Minseok and Choi, Woosung},
+  title = {Music Demixing Challenge 2021},
+  journal = {Frontiers in Signal Processing}, volume = {1}, pages = {808395}, year = {2022}
+}
+@inproceedings{araki2025thirtyyears,
+  author = {Araki, Shoko and Ito, Nobutaka and Haeb-Umbach, Reinhold and Wichern, Gordon and Wang, Zhong-Qiu and Mitsufuji, Yuki},
+  title = {{30+} Years of Source Separation Research: Achievements and Future Challenges},
+  booktitle = {IEEE Int. Conf. Acoustics, Speech and Signal Processing (ICASSP)}, year = {2025}
+}
+@book{elad2010sparse,
+  author = {Elad, Michael},
+  title = {Sparse and Redundant Representations: From Theory to Applications in Signal and Image Processing},
+  publisher = {Springer}, year = {2010}
+}

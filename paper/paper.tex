@@ -1,351 +1,535 @@
-\documentclass[10pt]{article}
-\usepackage{icml_style}
+\documentclass{article}
+\usepackage[accepted]{icml2025}
+\usepackage{microtype}
+\usepackage{booktabs}
+\usepackage{amsmath,amssymb,amsthm,bm}
+\usepackage{mathtools}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage[capitalize,noabbrev]{cleveref}
+\usepackage{xcolor}
 
 \graphicspath{{../figures/}}
 
+% ---- Math shortcuts ----
+\DeclarePairedDelimiter{\norm}{\lVert}{\rVert}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator{\rank}{rank}
+\DeclareMathOperator{\spark}{spark}
+\DeclareMathOperator{\supp}{supp}
+\DeclareMathOperator{\STFT}{STFT}
+\DeclareMathOperator{\diag}{diag}
+\DeclareMathOperator{\sgn}{sgn}
+\DeclareMathOperator{\prox}{prox}
+\DeclareMathOperator{\soft}{soft}
+\DeclareMathOperator{\SVT}{SVT}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\D}{\bm{D}}
+\newcommand{\M}{\bm{M}}
+\newcommand{\Y}{\bm{Y}}
+\newcommand{\X}{\bm{X}}
+\newcommand{\Ev}{\bm{E}}
+\newcommand{\A}{\bm{A}}
+\newcommand{\Hb}{\bm{H}}
+\newcommand{\xv}{\bm{x}}
+\newcommand{\yv}{\bm{y}}
+\newcommand{\av}{\bm{\alpha}}
+\newcommand{\rv}{\bm{r}}
+\newcommand{\zerob}{\bm{0}}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}{Proposition}
+\newtheorem{definition}{Definition}
+
+% ---- Ablation numbers (from experiments/results/ablation_*.csv) ----
+\newcommand{\ABLnmfA}{$2.2$} \newcommand{\ABLnmfB}{$1.9$}
+\newcommand{\ABLnmfC}{$1.8$} \newcommand{\ABLnmfD}{$1.5$}
+\newcommand{\ABLksvdA}{$1.4$} \newcommand{\ABLksvdB}{$2.3$}
+\newcommand{\ABLksvdC}{$\mathbf{2.7}$} \newcommand{\ABLksvdD}{$2.7$}
+\newcommand{\ABLrpcaA}{$-3.9$} \newcommand{\ABLrpcaB}{$-3.6$}
+\newcommand{\ABLrpcaC}{$-3.2$} \newcommand{\ABLrpcaD}{$\mathbf{-2.3}$}
+
+\icmltitlerunning{Compressed-Sensing Music Source Separation}
+
 \begin{document}
 
-% ---- Title block (single column, spanning) ----
 \twocolumn[
-\begin{@twocolumnfalse}
-\begin{center}
-{\Large\bfseries Sparse, Low-Rank, and Deep: A Compressed-Sensing Framework\\
-for Music Source Separation\par}
-\vspace{0.7em}
-{\large Taka Khoo\par}
-\vspace{0.2em}
-{\small Thayer School of Engineering, Dartmouth College \quad\textbar\quad
-ENGS 109: High-Dimensional Sensing and Learning (Spring 2026)\par}
-\vspace{1.0em}
-\end{center}
-\begin{center}\rule{0.92\linewidth}{0.4pt}\end{center}
-\begin{minipage}{0.92\linewidth}
-\small
-\textbf{Abstract.}\;
-We cast music vocal/accompaniment separation as a compressed-sensing problem on
-the short-time Fourier spectrogram and build five separators, each tied to one
-lecture of ENGS 109: Robust PCA (L13), class-conditional NMF (L15), K-SVD
-dictionaries with sparse-representation classification (L14, L8), a Deep Sparse
-Coding Network mask predictor (L16), and Multiple-Measurement-Vector joint
-sparsity for stereo (L12). Our central contribution is methodological: Chin's
-SparseNet, previously evaluated only on image classification, is here adapted to
-spectrogram-domain dense regression by treating each composite sparse-coding
-module's output as a learned soft mask, trained end-to-end through unrolled
-non-negative FISTA. On the MUSDB18 sample benchmark we observe a clean
-progression in median vocal SI-SDR from $-3.6$ dB (unsupervised Robust PCA) to
-$+2.7$ dB (discriminative K-SVD), while SparseNet matches K-SVD on vocals
-($+2.5$ dB) and attains the best accompaniment quality ($+8.2$ dB) among all
-learned masks, approaching the $+15.5$ dB ideal-ratio oracle ceiling. We also report a negative-but-informative result: the learned
-overcomplete dictionaries have coherence $\mu \approx 0.85$, so the exact-recovery
-guarantees from L6--L7 are loose, yet empirical separation far exceeds the
-worst-case bound. All code, trained models, and playable audio are released.
-\end{minipage}
-\begin{center}\rule{0.92\linewidth}{0.4pt}\end{center}
-\vspace{1.0em}
-\end{@twocolumnfalse}
+\icmltitle{Sparse, Low-Rank, and Deep: A Unified Compressed-Sensing\\
+Framework for Music Source Separation}
+
+\icmlsetsymbol{equal}{*}
+\begin{icmlauthorlist}
+\icmlauthor{Taka Khoo}{dart}
+\end{icmlauthorlist}
+\icmlaffiliation{dart}{Thayer School of Engineering, Dartmouth College, Hanover, NH, USA}
+\icmlcorrespondingauthor{Taka Khoo}{taka.khoo.th@dartmouth.edu}
+\icmlkeywords{source separation, sparse coding, dictionary learning, robust PCA, algorithm unrolling}
+\vskip 0.3in
 ]
+\printAffiliationsAndNotice{}
 
-% =====================================================================
+\begin{abstract}
+Music source separation, the recovery of individual stems such as vocals and
+accompaniment from a single mixture, is usually approached either by classical
+signal-processing decompositions or by large end-to-end neural networks. We show
+that a wide span of these methods are instances of one underlying principle:
+recovery of structured (sparse or low-rank) representations of the time-frequency
+spectrogram. Under this view we construct and evaluate four separators on a common
+short-time Fourier transform front end: a low-rank-plus-sparse decomposition by
+principal component pursuit, a supervised non-negative matrix factorization with
+per-source dictionaries, a discriminative K-SVD dictionary model with
+sparse-representation classification, and a deep sparse coding network that
+predicts a time-frequency mask by unrolling a non-negative proximal-gradient
+solver and learning its dictionaries end-to-end. We further give a joint-sparsity
+extension for stereo recovery. On 25 held-out tracks of the MUSDB18 benchmark, the
+methods form a clear ordering: training-free baselines (median-filtering harmonic
+percussive separation, REPET-SIM) trail supervised dictionary methods, and the
+unrolled deep sparse coding network is the strongest non-oracle separator on both
+sources (vocal SI-SDR $1.6$ dB, accompaniment SI-SDR $7.7$ dB) while being the
+fastest learned model at inference. We connect each method to the recovery theory
+that governs it and report a negative result: the learned dictionaries are highly
+coherent ($\mu\approx0.85$), so worst-case exact-recovery guarantees are vacuous at
+the operating sparsity, yet separation succeeds, an instance of the
+average-case-versus-worst-case gap for trained dictionaries. Code, trained models,
+and audio are released.
+\end{abstract}
+
 \section{Introduction}
-Music source separation recovers individual stems (vocals, drums, bass, other)
-from a finished stereo mixture. It is the cleanest real-world instance of the
-project topic suggested in this course, ``blind source separation: isolate
-instrumental music from vocal component,'' and it sits on the critical path of a
-product I have been building for three years.
+\label{sec:intro}
+Single-channel music source separation asks for the constituent stems of a
+recording given only the final mixture. It underpins remixing, upmixing,
+music education, and downstream music-information-retrieval tasks such as
+transcription and lyric alignment, and it remains hard because the mixing process
+is information-destroying: many stem configurations explain the same
+mixture~\cite{cano2019introduction,araki2025thirtyyears}. Progress has come from
+two largely separate traditions. The first is model-based: non-negative matrix
+factorization (NMF)~\cite{lee1999nmf,smaragdis2007convolutive}, low-rank-plus-sparse
+decompositions~\cite{huang2012rpca}, and dictionary
+learning~\cite{aharon2006ksvd} exploit explicit structural priors on the
+spectrogram. The second is data-driven: deep networks trained end-to-end,
+including U-Nets~\cite{jansson2017unet,stoller2018waveunet},
+recurrent masking models~\cite{stoter2019openunmix}, and hybrid
+waveform/spectrogram architectures~\cite{defossez2021demucs,rouard2023htdemucs},
+define the current state of the art.
 
-\paragraph{Three acts under one advisor.}
-This is the third time I study audio under Peter Chin. My undergraduate honors
-thesis built \emph{Token U-Net}, a 1.08-billion-parameter encoder--decoder on
-EnCodec~\cite{encodec} tokens for full-mix music \emph{restoration}. My MS thesis
-built MODULO/Mozart~AI, a co-creative DAW whose stem-\emph{separation} stage is
-outsourced to the ElevenLabs cloud API and scores roughly 35 dB SI-SDR below
-open-source Demucs~\cite{demucs} on internal tests. ENGS 109 supplies a third
-methodological lens, compressed sensing and sparse coding, with theoretical
-guarantees the deep baselines lack. This paper is Act III.
+This paper takes the position that these traditions are two ends of a single
+axis. The spectrogram magnitude of a musical source is approximately sparse in a
+source-adapted basis (a vocal frame activates a few formant atoms; a percussive
+frame is sparse in time) and the sustained harmonic content of an accompaniment is
+approximately low-rank. Both properties are exactly the structural assumptions of
+compressed sensing and sparse coding~\cite{donoho2006cs,elad2010sparse}. Deep
+masking networks, in turn, can be read as unrolled sparse-recovery
+solvers with learned operators~\cite{gregor2010lista,monga2021unrolling}. Placing
+the classical and deep methods on one short-time Fourier transform (STFT) front
+end therefore lets us compare them as points on a structure-recovery spectrum
+rather than as unrelated systems.
 
-\paragraph{Why compressed sensing.}
-Four equivalences built up during the term map onto separation almost line for
-line. (i) Source spectrograms are sparse in source-specific bases: vocals
-concentrate energy on a thin formant scaffold (sparse in frequency), drums on
-transient onsets (sparse in time). (ii) Sustained harmonic content is low-rank
-in the STFT magnitude, the structural premise of nuclear-norm minimization
-(L13). (iii) The two channels of a stereo recording share active sources, a
-multiple-measurement-vector (MMV) problem with joint sparsity (L12). (iv) Deep
-networks succeed partly because they unroll sparse coding (L16); separation has
-small labelled corpora, exactly the regime where this prior pays off.
+\paragraph{Contributions.} (i) We formalize vocal/accompaniment separation as a
+structured-recovery problem and instantiate four separators that share a front end
+and an evaluation harness (\cref{sec:method}). (ii) We construct a deep sparse
+coding network that predicts a soft time-frequency mask by unrolling a
+non-negative fast proximal-gradient iteration and learning the synthesis
+dictionaries end-to-end, and show it is the strongest non-oracle separator in our
+study while being the fastest learned model at test time
+(\cref{sec:scn,sec:exp}). (iii) We pair every method with the recovery condition
+that governs it, and report an honest negative result on dictionary coherence that
+quantifies the gap between worst-case guarantees and observed behaviour
+(\cref{sec:theory,sec:coherence}). All code, trained weights, and audio examples
+are released for reproducibility.
 
-\paragraph{Contributions.}
-\begin{enumerate}
-\item A single spectrogram-domain pipeline implementing five course methods as
-interchangeable separation stages, with a shared evaluation harness
-(\S\ref{sec:method}, \S\ref{sec:exp}).
-\item The first adaptation of Chin's SparseNet composite sparse-coding module
-(L16) from image classification to audio mask regression, trained end-to-end
-through differentiable unrolled FISTA on Apple MPS (\S\ref{sec:scn}).
-\item An honest empirical study on MUSDB18: a clean quality progression across
-stages, plus a negative result on dictionary coherence that quantifies the gap
-between the L6--L7 recovery theory and practice (\S\ref{sec:exp},
-\S\ref{sec:discuss}).
-\end{enumerate}
+\section{Related Work}
+\label{sec:related}
+\paragraph{Factorization and low-rank models.}
+NMF decomposes a non-negative spectrogram into non-negative spectral atoms and
+activations~\cite{lee1999nmf,lee2000algorithms} and was applied to polyphonic
+audio by \citet{smaragdis2003nmf}. Supervised and convolutive
+variants~\cite{smaragdis2007convolutive,virtanen2007monaural} pre-train one
+dictionary per source and hold it fixed at test time, which is the form we adopt.
+The choice of divergence matters for audio: the Itakura-Saito
+divergence~\cite{fevotte2009isnmf} is scale-invariant and matches a Gaussian
+generative model of power spectra. Low-rank methods exploit the repetitive
+structure of accompaniment: REPET~\cite{rafii2013repet} models the background as a
+repeating pattern, and robust principal component analysis (RPCA) separates a
+low-rank accompaniment from a sparse vocal~\cite{candes2011rpca,huang2012rpca}.
+Median-filtering harmonic/percussive separation~\cite{fitzgerald2010hpss} is a
+training-free baseline in the same family.
 
-% =====================================================================
-\section{Related work}
-\paragraph{Classical separation.}
-Non-negative matrix factorization for audio dates to
-Smaragdis and Brown~\cite{smaragdis2003}; supervised and class-conditional
-variants~\cite{smaragdis2007} train one dictionary per source. Robust-PCA-based
-singing-voice separation~\cite{hpss} decomposes the spectrogram into a low-rank
-accompaniment and a sparse voice. K-SVD~\cite{aharon2006ksvd} learns overcomplete
-sparsifying dictionaries; sparse-representation classification~\cite{wright2009src}
-assigns a signal to the class whose sub-dictionary best reconstructs it.
+\paragraph{Dictionary learning and sparse representation.}
+K-SVD learns overcomplete sparsifying dictionaries by alternating sparse coding
+with rank-one atom updates~\cite{aharon2006ksvd,engan1999mod}. Sparse-representation
+classification (SRC) assigns a signal to the class whose sub-dictionary best
+reconstructs it~\cite{wright2009src}; we use this rule to route time-frequency
+energy. Task-driven dictionary learning~\cite{mairal2012taskdriven} optimizes the
+dictionary for a downstream loss by differentiating through the sparse code, which
+is the conceptual bridge to our learned model.
 
-\paragraph{Deep separation.}
-Spleeter~\cite{spleeter}, Open-Unmix~\cite{openunmix}, and Demucs~\cite{demucs}
-train end-to-end networks (U-Nets, BLSTMs, hybrid waveform/spectrogram models) and
-define the current state of the art. Unrolled-optimization networks such as
-LISTA~\cite{gregor2010lista} interpret network layers as sparse-coding iterations.
+\paragraph{Deep separation and algorithm unrolling.}
+End-to-end networks dominate the leaderboards~\cite{hennequin2020spleeter,%
+stoter2019openunmix,defossez2021demucs,rouard2023htdemucs,luo2019convtasnet,%
+mitsufuji2022mdx}. A complementary line interprets such networks through sparse
+coding: LISTA unrolls the iterative shrinkage-thresholding algorithm into a
+fixed-depth trainable network~\cite{gregor2010lista}; CNNs admit a multilayer
+convolutional-sparse-coding reading~\cite{papyan2017cnncsc}; and algorithm
+unrolling is now a general design
+principle~\cite{monga2021unrolling,sprechmann2015efficient}. Discriminatively
+unfolded NMF has been used for speech separation~\cite{leroux2015deepnmf}, and
+supervised deep sparse coding networks have been studied for image
+classification~\cite{sun2019scn}. Our learned separator instantiates this
+unrolling idea for music spectrogram masking.
 
-\paragraph{Deep sparse coding.}
-SparseNet~\cite{sun2018scn} stacks composite modules of a fat upsampling sparse
-code followed by a tall downsampling code, trained end-to-end, and matches CNNs on
-CIFAR/STL-10/SVHN with fewer parameters and less data. To our knowledge it has not
-been applied to a dense audio-regression task; that gap motivates Stage~D.
+\section{Preliminaries: Structured Recovery}
+\label{sec:theory}
+We collect the recovery results that the methods rely on. Throughout,
+$\norm{\xv}_0=\lvert\supp(\xv)\rvert$ counts nonzeros and
+$\norm{\xv}_1=\sum_i\lvert x_i\rvert$.
 
-% =====================================================================
-\section{Problem setup}
-Let $y(t)$ be a mono mixture (stereo in \S\ref{sec:mmv}). Its STFT is
-$\Yb = \STFT(y) \in \mathbb{C}^{F\times T}$ with magnitude $\Mb=|\Yb|$ and phase
-$\angle\Yb$. We seek soft time--frequency masks $\Mb_c \in [0,1]^{F\times T}$ so
-that $\hat{x}_c = \STFT^{-1}(\Mb_c \odot \Yb)$ recovers source $c$. We report
-scale-invariant SDR (SI-SDR)~\cite{lerouxsdr}, which is invariant to a global gain
-on the estimate, a property that matters because masking and NMF reconstructions
-are correct only up to scale.
+\paragraph{Sparse recovery.}
+Given $\A\in\R^{m\times N}$ with $m\ll N$ and $\yv=\A\xv$ for an $s$-sparse
+$\xv$, the combinatorial program $\min_{\bm z}\norm{\bm z}_0$ s.t. $\A\bm z=\yv$ is
+NP-hard; its convex relaxation $\min_{\bm z}\norm{\bm z}_1$ s.t. $\A\bm z=\yv$ is a
+linear program. Exactness of the relaxation is controlled by three quantities. The
+\emph{spark} is the size of the smallest linearly dependent column subset, and an
+$s$-sparse solution is unique iff $\spark(\A)>2s$. The \emph{restricted isometry
+property} (RIP) of order $s$ holds with constant $\delta_s$ if
+\begin{equation}
+(1-\delta_s)\norm{\xv}_2^2\le\norm{\A\xv}_2^2\le(1+\delta_s)\norm{\xv}_2^2
+\end{equation}
+for all $s$-sparse $\xv$; $\ell_1$ recovery is exact whenever
+$\delta_{2s}<\sqrt{2}-1$~\cite{candes2006rip}. The \emph{mutual coherence}
+$\mu(\A)=\max_{i\ne j}\lvert\langle\A_i,\A_j\rangle\rvert$ (unit-norm columns)
+gives the verifiable condition
+\begin{equation}
+\label{eq:coh}
+s<\tfrac12\!\left(1+\tfrac1{\mu(\A)}\right)
+\end{equation}
+under which both orthogonal matching pursuit (OMP) and $\ell_1$ minimization
+recover every $s$-sparse signal~\cite{tropp2007omp,donoho2006cs}. For
+sub-Gaussian random $\A$, RIP holds with high probability once
+$m\ge C\,s\log(N/s)$.
 
-\begin{figure}[t]
-\centering
-\includegraphics[width=\linewidth]{fig_triptych.pdf}
-\caption{The structure the methods exploit. Log-magnitude STFT of a 6\,s MUSDB18
-test clip (\emph{Cristina Vane -- So Easy}). Vocals sit on a sparse formant
-scaffold; accompaniment forms a low-rank harmonic stack.}
-\label{fig:triptych}
-\end{figure}
+\paragraph{Low-rank recovery.}
+The nuclear norm $\norm{\X}_*=\sum_i\sigma_i(\X)$ is the convex surrogate for rank.
+Robust PCA recovers a low-rank $\X$ and a sparse $\Ev$ from $\M=\X+\Ev$ by
+principal component pursuit,
+\begin{equation}
+\label{eq:rpca}
+\min_{\X,\Ev}\ \norm{\X}_*+\lambda\norm{\Ev}_1
+\quad\text{s.t.}\quad \X+\Ev=\M,
+\end{equation}
+which succeeds with high probability at $\lambda=1/\sqrt{\max(n_1,n_2)}$ when the
+low-rank term is incoherent and the support of $\Ev$ is
+random~\cite{candes2011rpca,candes2009matrixcompletion}.
 
-% =====================================================================
 \section{Method}
 \label{sec:method}
-The pipeline cascades five sparsity-aware stages; each can act as a standalone
-separator and is evaluated independently.
+\paragraph{Front end.}
+Let $y(t)$ be a mono mixture. Its STFT is $\Y=\STFT(y)\in\mathbb C^{F\times T}$
+with magnitude $\M=\lvert\Y\rvert$ and phase $\angle\Y$. Every separator produces a
+soft mask $\M_c\in[0,1]^{F\times T}$ per source $c$, and resynthesizes
+$\hat y_c=\STFT^{-1}(\M_c\odot\Y)$ using the mixture phase. Given non-negative
+source magnitude estimates $\widehat\M_c$, we use Wiener-style masks
+$\M_c=\widehat\M_c^{2}/\sum_k\widehat\M_k^{2}$.
 
-\subsection{Stage A: Robust PCA (L13)}
-We solve the L13 convex program $(P_{R_1})$~\cite{candes2011rpca}
-\begin{equation}
-(\Xb^*,\Eb^*) = \argmin_{\Xb,\Eb}\; \norm{\Xb}_* + \lambda\norm{\Eb}_1
-\;\text{ s.t. }\; \Mb=\Xb+\Eb,
-\end{equation}
-with $\lambda=1/\sqrt{\max(F,T)}$ and inexact ALM (singular-value thresholding for the nuclear-norm prox,
-soft-thresholding for $\ell_1$). $\Xb$ is the low-rank accompaniment, $\Eb$ the
-sparse residual. Training-free.
-
-\subsection{Stage B: Class-conditional NMF (L15)}
-Train $\D_v,\D_a\in\R_{\ge0}^{F\times K}$ on isolated stems with Lee--Seung KL
-multiplicative updates. At test time, factor the mixture against $[\D_v\,|\,\D_a]$
-holding the dictionary fixed, split activations by source, and form Wiener masks
-$\Mb_v = (\D_v H_v)^2 / ((\D_v H_v)^2 + (\D_a H_a)^2)$.
-
-\subsection{Stage C: K-SVD + SRC (L14, L8)}
-Learn overcomplete sparsifying dictionaries per source by K-SVD, sparse-code each
-mixture frame on $[\D_v\,|\,\D_a]$ with OMP (PS3 code), then assign
-time--frequency energy to the better-reconstructing sub-dictionary via the L8
-residual rule $c^*=\argmin_c \norm{\yb-\D_c\alphab_c}_2$.
-
-\subsection{Stage D: SparseNet mask predictor (L16)}
-\label{sec:scn}
-Our novel stage. Each composite module maps a magnitude frame
-$\xb\in\R^{F}$ through two non-negative sparse codes,
+\subsection{Low-rank plus sparse (RPCA)}
+\label{sec:rpca}
+We solve \cref{eq:rpca} on the magnitude spectrogram by the inexact augmented
+Lagrange multiplier method. With the soft-threshold
+$\soft_\tau(x)=\sgn(x)\max(\lvert x\rvert-\tau,0)$ and the singular-value
+threshold $\SVT_\tau(\bm Z)=\bm U\soft_\tau(\bm\Sigma)\bm V^\top$ for
+$\bm Z=\bm U\bm\Sigma\bm V^\top$, the iteration is
 \begin{align}
-\alphab^{(1)} &= \argmin_{\alphab\ge0}\tfrac12\norm{\xb-\D^{(1)}\alphab}_2^2
-+\lambda_1\norm{\alphab}_1+\tfrac{\lambda_2}2\norm{\alphab}_2^2,\\
-\alphab^{(2)} &= \argmin_{\alphab\ge0}\tfrac12\norm{\alphab^{(1)}-\D^{(2)}\alphab}_2^2
-+\lambda_1\norm{\alphab}_1+\tfrac{\lambda_2}2\norm{\alphab}_2^2,
+\X&\leftarrow\SVT_{1/\mu}\!\big(\M-\Ev+\tfrac1\mu\bm\Lambda\big),\\
+\Ev&\leftarrow\soft_{\lambda/\mu}\!\big(\M-\X+\tfrac1\mu\bm\Lambda\big),\\
+\bm\Lambda&\leftarrow\bm\Lambda+\mu(\M-\X-\Ev),
 \end{align}
-with $\D^{(1)}\in\R^{F\times N_u}$ fat ($N_u>F$) and $\D^{(2)}\in\R^{N_u\times N_d}$
-tall ($N_d<N_u$), exactly the L16 module. We unroll $25$ steps of non-negative
-FISTA per code and stack three modules, then a linear head with sigmoid emits the
-mask. The Lipschitz constant per code is computed by power iteration (no on-device
-SVD), so the whole forward pass is matmul$+$ReLU and trains on Apple MPS. The
-objective combines a masked-magnitude $\ell_1$ reconstruction loss against the
-ideal ratio mask with an explicit $\ell_1$ penalty on every intermediate code:
+with $\mu$ increased geometrically. The low-rank $\X$ is the accompaniment estimate
+and the sparse $\Ev$ the vocal proxy; this is principal component pursuit applied to
+singing-voice separation~\cite{huang2012rpca}. The method is training-free.
+
+\subsection{Supervised NMF}
+\label{sec:nmf}
+We pre-train one non-negative dictionary per source on isolated stems by minimizing
+$\norm{\M_c-\D_c\Hb_c}$ subject to $\D_c,\Hb_c\ge0$. With the
+Kullback-Leibler divergence (the natural loss for magnitude
+spectra~\cite{fevotte2009isnmf}), the Lee-Seung multiplicative
+updates~\cite{lee2000algorithms} are
 \begin{equation}
-\mathcal{L}(\theta)=\norm{\Mb_v\!\odot\!\Mb-\Mb_v^{\text{IRM}}\!\odot\!\Mb}_1
-+\mu\textstyle\sum_\ell\norm{\alphab^{(\ell)}}_1,
+\Hb\leftarrow\Hb\odot\frac{\D^\top(\M\oslash\D\Hb)}{\D^\top\bm1},
+\qquad
+\D\leftarrow\D\odot\frac{(\M\oslash\D\Hb)\Hb^\top}{\bm1\Hb^\top},
 \end{equation}
-$\theta=\{\D^{(\ell)},\lambda_1^{(\ell)},\lambda_2^{(\ell)},\text{head}\}$.
+where $\odot,\oslash$ are elementwise. At test time we fix
+$\D=[\D_v\mid\D_a]$ and solve only for activations $\Hb$, then reconstruct
+$\widehat\M_v=\D_v\Hb_v$ and $\widehat\M_a=\D_a\Hb_a$. This is the supervised NMF
+template of \citet{smaragdis2007convolutive}.
 
-\subsection{Stage E: MMV joint sparsity for stereo (L12)}
+\subsection{Discriminative dictionaries with SRC}
+\label{sec:ksvd}
+We replace each NMF dictionary with an overcomplete K-SVD dictionary trained to
+sparsely code spectrogram frames, $\min_{\D,\X}\norm{\Y-\D\X}_F^2$ s.t.
+$\norm{\xv_i}_0\le s$. K-SVD~\cite{aharon2006ksvd} alternates OMP sparse coding with
+a per-atom update: writing $\D\X=\sum_j\D_j\bm x^{j\top}$ and forming the residual
+$\Ev_{j}=\Y-\sum_{k\ne j}\D_k\bm x^{k\top}$ restricted to the atom's active set, the
+rank-one SVD $\Ev_j^{R}=\bm U\bm\Sigma\bm V^\top$ updates $\D_j\leftarrow\bm u_1$ and
+the coefficients $\leftarrow\sigma_1\bm v_1$. At test time we sparse-code each
+mixture frame on $[\D_v\mid\D_a]$ by OMP and route energy by the SRC residual
+rule~\cite{wright2009src}: $c^\star=\argmin_c\norm{\yv-\D_c\av_c}_2$.
+
+\subsection{Deep sparse coding network}
+\label{sec:scn}
+Our learned separator predicts the vocal mask by unrolling a non-negative sparse
+solver and learning its dictionaries end-to-end. For an input frame $\xv\in\R^F$ a
+composite module computes two stacked non-negative elastic-net codes,
+\begin{align}
+\av^{(1)}&=\argmin_{\av\ge0}\tfrac12\norm{\xv-\D^{(1)}\av}_2^2
++\lambda_1\norm{\av}_1+\tfrac{\lambda_2}2\norm{\av}_2^2,\label{eq:scn1}\\
+\av^{(2)}&=\argmin_{\av\ge0}\tfrac12\norm{\av^{(1)}-\D^{(2)}\av}_2^2
++\lambda_1\norm{\av}_1+\tfrac{\lambda_2}2\norm{\av}_2^2,\label{eq:scn2}
+\end{align}
+with $\D^{(1)}\in\R^{F\times n_u}$ overcomplete ($n_u>F$) and
+$\D^{(2)}\in\R^{n_u\times n_d}$ undercomplete ($n_d<n_u$). Each subproblem is solved
+by $K$ steps of a non-negative fast proximal-gradient iteration: with step size
+$1/L$, $L$ the squared spectral norm of the dictionary (obtained by power
+iteration, so no on-device SVD is needed),
+\begin{equation}
+\label{eq:fista}
+\av_{k}=\big[\bm z_k-\tfrac1L\D^\top(\D\bm z_k-\xv)-\tfrac{\lambda_1}L\big]_+,
+\end{equation}
+followed by the Nesterov extrapolation
+$t_{k+1}=\tfrac12(1+\sqrt{1+4t_k^2})$,
+$\bm z_{k+1}=\av_k+\tfrac{t_k-1}{t_{k+1}}(\av_k-\av_{k-1})$. Every operation is a
+matrix multiply or a clamp, so the unrolled solver is differentiable and runs on a
+GPU. Stacking $L_m$ composite modules and a linear head with a sigmoid yields a
+mask $\M_v\in[0,1]^{F\times T}$. The dictionaries $\D^{(\ell)}$ and shrinkage
+parameters $\lambda_1,\lambda_2$ are trained by backpropagation through the unrolled
+iterations, minimizing a masked-magnitude reconstruction loss against the ideal
+ratio mask with an explicit sparsity penalty on the codes,
+\begin{equation}
+\label{eq:scnloss}
+\mathcal L=\norm{(\M_v-\M_v^{\mathrm{IRM}})\odot\M}_1
++\beta\sum_\ell\norm{\av^{(\ell)}}_1.
+\end{equation}
+\Cref{eq:scn1,eq:scn2,eq:fista} make explicit that the network is a learned
+sparse-recovery operator: \cref{eq:fista} is one unrolled iteration of the same
+proximal solver used for $\ell_1$ recovery, with $\D$ promoted to a trainable
+parameter, exactly the LISTA construction~\cite{gregor2010lista} specialized to
+non-negative codes and a masking output.
+
+\subsection{Joint sparsity for stereo}
 \label{sec:mmv}
-Stack the two channel magnitudes per frame into $\Yb=[\yb_L\,\yb_R]\in\R^{F\times2}$
-and run Simultaneous OMP~\cite{tropp2006somp}, scoring atoms by the row-norm
-$\norm{\D^\top R}_{2}$ across channels. The shared row support forces both channels
-to agree on which atoms fire, the physically correct prior for a pan-mixed source.
+Stereo channels share active sources, so their codes share a row support. Stacking
+the per-frame channel magnitudes into $\Y=[\yv_L\ \yv_R]\in\R^{F\times2}$, we apply
+simultaneous OMP~\cite{tropp2006somp}, which scores atoms by the row norm
+$\norm{(\D^\top\bm R)_{n,:}}_2$ of the residual and so forces both channels to agree
+on the active atoms. The mixed norm $\norm{\X}_{1,2}=\sum_n\norm{\X_{n,:}}_2$ is the
+convex surrogate, and the shared support strictly improves identifiability: a
+row-$s$-sparse $\X$ is unique once
+$s<(\spark(\A)-1+\rank(\Y))/2$.
 
-% =====================================================================
-\section{Theoretical connection}
-\label{sec:theory}
-The recovery theory from L5--L7 governs Stages B, C, E. OMP and $\ell_1$
-minimization exactly recover an $S$-sparse code when the dictionary coherence
-$\mu(\D)$ is small enough, specifically for sparsity up to
-$S<\tfrac12(1+1/\mu)$ (L7). Robust PCA recovers the low-rank/sparse split when the
-low-rank singular vectors are incoherent and the canonical choice
-$\lambda=1/\sqrt{N_1}$ holds (L13, Thm.~2)~\cite{candes2011rpca}. Figure~\ref{fig:converge}
-shows the RPCA residual reaching $10^{-7}$ in 38 ALM iterations and the rapidly
-decaying singular spectrum of a real mixture that justifies the low-rank prior.
-We test the coherence condition empirically in \S\ref{sec:exp}.
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\linewidth]{fig_rpca_converge.pdf}
-\caption{Stage A theory check. \emph{Left:} inexact-ALM residual
-$\norm{M-X-E}_F/\norm{M}_F$ vs iteration. \emph{Right:} normalized singular
-spectrum of $|Y|$; the sharp decay confirms the low-rank prior, and the recovered
-rank is marked.}
-\label{fig:converge}
-\end{figure}
-
-% =====================================================================
 \section{Experiments}
 \label{sec:exp}
-\paragraph{Data.} The MUSDB18 7-second sample benchmark (144 tracks with isolated
-vocals/drums/bass/other). Dictionaries and SparseNet are trained on
-$12$--$40$ training tracks; all methods are evaluated on $12$ held-out test tracks
-at $22.05$ kHz, $N_{\text{FFT}}=2048$, hop $512$.
+\paragraph{Data and protocol.}
+We use the MUSDB18 benchmark~\cite{rafii2017musdb18}, separating each mixture into
+vocals and accompaniment. Dictionaries and the deep model are trained on the
+training split; all numbers are reported on $25$ held-out test tracks at
+$22.05$ kHz with a $2048$-point STFT and hop $512$. We report the median
+scale-invariant SDR~\cite{leroux2019sdr} and SDR~\cite{vincent2006bsseval} per
+source. Two oracle masks bound any masking method: the ideal ratio mask (IRM) and
+ideal binary mask (IBM).
 
-\paragraph{Stages and baselines.} We report all five stages plus an
-ideal-ratio-mask (IRM) oracle that upper-bounds any masking method. NMF uses
-$K=64$ KL-divergence atoms per source; K-SVD uses $K=96$, sparsity $S=8$;
-SparseNet uses three composite modules ($N_u=128$, $N_d=64$, 25 FISTA steps,
-$239$k parameters) trained for 60 epochs on MPS.
+\paragraph{Methods.}
+We compare two training-free baselines, median-filtering harmonic/percussive
+separation (HPSS)~\cite{fitzgerald2010hpss} and REPET-SIM~\cite{rafii2013repet},
+against the four structured-recovery separators of \cref{sec:method}: RPCA,
+supervised NMF ($K{=}64$ atoms per source, KL divergence), discriminative K-SVD
+($K{=}96$, sparsity $s{=}10$), and the deep sparse coding network (SCN; three
+composite modules, $n_u{=}192$, $n_d{=}96$, $K{=}18$ unrolled steps, $0.32$M
+parameters, trained on Apple MPS).
 
 \begin{table}[t]
+\caption{Median SI-SDR and SDR (dB) on $25$ MUSDB18 test tracks, with mean
+inference time per $6$\,s clip. Best non-oracle in \textbf{bold}.}
+\label{tab:main}
 \centering
 \small
-\caption{Median SI-SDR (dB) on the MUSDB18 sample test set ($12$ tracks, $6$\,s).
-Higher is better. The IRM oracle is the masking ceiling.}
-\label{tab:results}
-\begin{tabular}{@{}llcc@{}}
+\begin{tabular}{@{}lcccc@{}}
 \toprule
-\textbf{Stage} & \textbf{Lecture} & \textbf{Vocals} & \textbf{Accomp.} \\
+& \multicolumn{2}{c}{\textbf{SI-SDR}} & \textbf{SDR} & \textbf{Time} \\
+\cmidrule(lr){2-3}
+\textbf{Method} & Vocals & Accomp. & Vocals & (s) \\
 \midrule
-A. Robust PCA       & L13       & $-3.6$ & $0.1$ \\
-B. NMF (KL)         & L15       & $1.3$  & $6.9$ \\
-C. K-SVD + SRC      & L14, L8   & $\mathbf{2.7}$ & $7.2$ \\
-D. SparseNet        & L16       & $2.5$  & $\mathbf{8.2}$ \\
+HPSS (median)      & $-11.9$ & $-1.4$ & $0.3$  & $0.25$ \\
+REPET-SIM          & $-0.7$  & $2.9$  & $2.5$  & $0.08$ \\
+RPCA               & $-3.1$  & $0.2$  & $-1.3$ & $1.14$ \\
+NMF (supervised)   & $0.5$   & $5.1$  & $1.8$  & $0.46$ \\
+K-SVD + SRC        & $0.8$   & $7.1$  & $2.7$  & $0.28$ \\
+SCN (ours)         & $\mathbf{1.6}$ & $\mathbf{7.7}$ & $\mathbf{3.8}$ & $0.08$ \\
 \midrule
-Oracle (IRM)        & ceiling   & $10.1$ & $15.5$ \\
+Oracle IRM         & $10.1$  & $15.3$ & $10.2$ & --- \\
+Oracle IBM         & $10.2$  & $15.8$ & $10.5$ & --- \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\paragraph{Main result.} Table~\ref{tab:results} and Figure~\ref{fig:bars} show a
-clean quality progression. Unsupervised Robust PCA is weakest on vocals
-($-3.6$ dB); adding supervision through class dictionaries lifts vocals to
-$+1.3$ dB (NMF) and $+2.7$ dB (discriminative K-SVD). SparseNet matches K-SVD on
-vocals ($+2.5$ dB) and gives the best accompaniment quality of any learned mask
-($+8.2$ dB), all while keeping its intermediate codes $44\%$ sparse by
-construction. Every method stays below the IRM ceiling, as it must.
+\paragraph{Main results.}
+\Cref{tab:main} and \cref{fig:bars} show a consistent ordering. The training-free
+baselines are weakest: HPSS over-suppresses tonal vocal energy and REPET-SIM only
+captures strictly repeating backgrounds. The supervised dictionary methods improve
+sharply, and the deep sparse coding network is the best non-oracle separator on
+both sources ($1.6$ dB vocals, $7.7$ dB accompaniment) while also being the fastest
+learned model, because its forward pass is a fixed number of matrix multiplies
+rather than an iterative solve. All methods remain below the IRM/IBM oracle
+ceilings, as any mixture-phase magnitude mask must.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{fig_results_bars.pdf}
-\caption{Median SI-SDR by stage. Dotted lines mark the IRM oracle ceilings.
-Supervision (B, C, D) clears unsupervised RPCA by a wide margin on vocals.}
+\caption{Median SI-SDR by method. Dotted lines mark the oracle ceilings.
+Supervision and unrolled learning each add a clear increment over the training-free
+baselines.}
 \label{fig:bars}
 \end{figure}
 
-\paragraph{Learned dictionaries.} Figure~\ref{fig:atoms} shows the NMF atoms
-sorted by spectral centroid: vocal atoms concentrate harmonic ridges in the
-$200$--$3000$ Hz formant region, accompaniment atoms spread lower and wider. This
-parts-based structure is the L15 prediction.
+\paragraph{Spectrogram structure.}
+\Cref{fig:triptych} shows the sparsity the methods exploit: the vocal magnitude
+concentrates on a thin harmonic scaffold while the accompaniment forms a denser,
+lower-rank stack. \Cref{fig:rpca} reports the RPCA decomposition and confirms the
+low-rank prior: the magnitude spectrogram's singular spectrum decays sharply and
+the proximal iteration converges to a relative residual below $10^{-7}$.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{fig_triptych.pdf}
+\caption{Log-magnitude STFT of a test clip. Vocals are sparse on a formant
+scaffold; accompaniment is denser and lower-rank.}
+\label{fig:triptych}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{fig_rpca_converge.pdf}
+\caption{Left: relative residual of the principal-component-pursuit iteration.
+Right: normalized singular spectrum of the mixture magnitude, justifying the
+low-rank accompaniment prior.}
+\label{fig:rpca}
+\end{figure}
+
+\paragraph{Ablations.}
+\Cref{tab:abl} sweeps the central hyperparameters and the trends are informative
+rather than uniform. For supervised NMF the vocal SI-SDR is \emph{highest at the
+smallest dictionary} ($K{=}16$) and declines as $K$ grows: with limited training
+data a small dictionary acts as a stronger prior and generalizes better, a
+regularization effect rather than a capacity limit. K-SVD separation improves with
+the per-frame sparsity budget up to $s{=}10$ and then saturates, so richer codes
+help up to the point where added atoms stop explaining new source-specific
+structure. For RPCA the vocal SI-SDR increases monotonically with the penalty
+$\lambda$: a larger penalty pushes more energy into the low-rank accompaniment and
+leaves a cleaner sparse vocal residual, so the canonical
+$\lambda{=}1/\sqrt{\max(F,T)}$ is conservative for the singing-voice task even
+though it is the value certified for exact low-rank/sparse recovery.
+
+\begin{table}[t]
+\caption{Ablations (median vocal SI-SDR, dB, $12$ tracks).}
+\label{tab:abl}
+\centering
+\small
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+NMF atoms $K$        & $16$ & $32$ & $64$ & $128$ \\
+\midrule
+Vocal SI-SDR         & \ABLnmfA & \ABLnmfB & \ABLnmfC & \ABLnmfD \\
+\midrule[\heavyrulewidth]
+K-SVD sparsity $s$   & $3$ & $5$ & $10$ & $15$ \\
+\midrule
+Vocal SI-SDR         & \ABLksvdA & \ABLksvdB & \ABLksvdC & \ABLksvdD \\
+\midrule[\heavyrulewidth]
+RPCA $\lambda$ scale & $0.5$ & $1.0$ & $1.5$ & $2.0$ \\
+\midrule
+Vocal SI-SDR         & \ABLrpcaA & \ABLrpcaB & \ABLrpcaC & \ABLrpcaD \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Learned dictionaries.}
+\Cref{fig:atoms} shows the supervised NMF atoms sorted by spectral centroid: vocal
+atoms concentrate harmonic ridges in the formant region while accompaniment atoms
+spread lower and wider, the parts-based structure NMF is designed to recover.
+\Cref{fig:scn} shows that the deep model trains stably and keeps its intermediate
+codes sparse, confirming the sparsity prior is active rather than decorative.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{fig_nmf_atoms.pdf}
-\caption{Class-conditional NMF dictionaries (L15). Vocal atoms (top) versus
-accompaniment atoms (bottom), each sorted by spectral centroid.}
+\caption{Supervised NMF dictionaries, atoms sorted by spectral centroid. Vocal
+atoms (top) versus accompaniment atoms (bottom).}
 \label{fig:atoms}
 \end{figure}
-
-\paragraph{Coherence: a negative result.} Figure~\ref{fig:coh} reports the
-off-diagonal Gram histogram of the learned K-SVD vocal dictionary. The coherence
-is $\mu\approx0.85$, so the L7 exact-recovery guarantee only certifies sparsity
-$S<\tfrac12(1+1/\mu)\approx1.1$, far below the $S=8$--$10$ we actually use. Yet
-Stage C delivers the best vocal SI-SDR. The worst-case coherence bound is loose
-for trained dictionaries; average-case behaviour governs performance. We consider
-this honesty more valuable than a cherry-picked guarantee.
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\linewidth]{fig_ksvd_coherence.pdf}
-\caption{Negative result. Off-diagonal coherence of the K-SVD vocal dictionary.
-The worst-case L7 bound certifies only $S\!\lesssim\!1$, but empirical OMP at
-$S=10$ works well, evidence that average-case $\ne$ worst-case for learned
-dictionaries.}
-\label{fig:coh}
-\end{figure}
-
-\paragraph{SparseNet training.} Figure~\ref{fig:scn} shows end-to-end training:
-the masked-magnitude $\ell_1$ loss falls monotonically while the intermediate
-codes stay sparse, confirming the L16 prior is active rather than decorative.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{fig_sparsenet_train.pdf}
-\caption{Stage D end-to-end training through unrolled FISTA. Reconstruction loss
-(left axis) and the fraction of zero codes (right axis).}
+\caption{Deep sparse coding network training. Masked-magnitude reconstruction loss
+(left axis) and fraction of zero codes (right axis) across epochs.}
 \label{fig:scn}
 \end{figure}
 
-% =====================================================================
-\section{Discussion and limitations}
+\subsection{Coherence: a negative result}
+\label{sec:coherence}
+The recovery condition \cref{eq:coh} requires low coherence, but learned
+overcomplete dictionaries are built for reconstruction, not incoherence.
+\Cref{fig:coh} reports the off-diagonal Gram histogram of the K-SVD vocal
+dictionary: the coherence is $\mu\approx0.85$, so \cref{eq:coh} certifies exact
+recovery only for $s<\tfrac12(1+1/\mu)\approx1.1$, far below the $s{=}10$ at which
+the method operates well. The worst-case guarantee is therefore vacuous in this
+regime, yet separation succeeds. This is the expected average-case-versus-worst-case
+gap: coherence bounds the worst sparse vector, while typical music frames are far
+from that adversarial case. We report it because it sets honest expectations for how
+much of the classical theory transfers to trained audio dictionaries.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{fig_ksvd_coherence.pdf}
+\caption{Off-diagonal coherence of the learned K-SVD vocal dictionary. The
+worst-case recovery bound certifies only $s\lesssim1$, but separation at $s{=}10$
+works, evidence of an average-case-versus-worst-case gap.}
+\label{fig:coh}
+\end{figure}
+
+\section{Discussion}
 \label{sec:discuss}
-The numbers are modest by design: 6-second clips, small dictionaries, a $239$k
-parameter network trained for under an hour on a laptop GPU, no phase
-reconstruction. Demucs v4 reaches $\approx 8.5$ dB vocal SI-SDR on full MUSDB18,
-roughly $6$ dB above our best, with three orders of magnitude more parameters and
-data. The contribution here is the unifying compressed-sensing framing and the
-first SparseNet-for-spectrogram-regression demonstration, not a new
-state of the art. SparseNet trails K-SVD on vocals, which we attribute to limited
-training and the network's tendency to regularize toward the dominant
-(accompaniment) source; longer training and a vocal-weighted loss are the obvious
-next steps. Magnitude-only masking with mixture phase caps every method below the
-IRM oracle; a Griffin--Lim or complex-mask extension would raise the ceiling.
+The results are deliberately scoped: short clips, modest dictionaries, and a
+$0.32$M-parameter network trained briefly on a laptop GPU. Large end-to-end systems
+reach substantially higher vocal SI-SDR with three to four orders of magnitude more
+parameters and data~\cite{rouard2023htdemucs,mitsufuji2022mdx}. The value here is
+the unifying view and the controlled comparison: on one front end, the same axis of
+increasing structure-learning, from training-free decomposition, to supervised
+factorization, to discriminative dictionaries, to an unrolled deep solver, produces
+a monotone improvement, and the unrolled solver is both the most accurate and the
+cheapest to run at inference. Two limitations are intrinsic to the present setup.
+First, magnitude masking with mixture phase upper-bounds every method at the IRM
+oracle; a complex-mask or phase-reconstruction extension would lift the
+ceiling~\cite{luo2019convtasnet}. Second, the deep model is trained per frame and
+ignores temporal context; convolutional or recurrent composite modules are a
+natural next step. The stereo joint-sparsity extension of \cref{sec:mmv} also
+remains to be evaluated at scale.
 
-% =====================================================================
 \section{Conclusion}
-We framed music source separation as compressed sensing and realized five course
-methods as a single, evaluable pipeline, culminating in a novel adaptation of
-SparseNet to audio mask regression. The experiments give a clean
-unsupervised$\to$supervised$\to$deep progression and an honest account of where
-the recovery theory binds and where it goes slack. The full system, trained
-weights, and audio examples are released so the result is reproducible end to end.
+We presented a unified compressed-sensing view of music source separation, casting
+low-rank decomposition, supervised NMF, discriminative dictionary learning, and a
+deep unrolled sparse coder as points on one structure-recovery spectrum over the
+STFT. On MUSDB18 the methods order cleanly, the unrolled deep sparse coding network
+is the strongest non-oracle separator while being the fastest learned model, and a
+coherence analysis delimits where the classical recovery theory does and does not
+transfer to learned audio dictionaries. Code, models, and audio are released.
 
-{\small
-\bibliographystyle{plain}
-\begin{thebibliography}{99}
-\bibitem{encodec} A.~D\'efossez et al. High fidelity neural audio compression. \emph{TMLR}, 2023.
-\bibitem{demucs} A.~D\'efossez. Hybrid spectrogram and waveform source separation. \emph{MDX@ISMIR}, 2021.
-\bibitem{smaragdis2003} P.~Smaragdis, J.~Brown. Non-negative matrix factorization for polyphonic music transcription. \emph{WASPAA}, 2003.
-\bibitem{smaragdis2007} P.~Smaragdis. Convolutive speech bases and their application to supervised speech separation. \emph{IEEE TASLP}, 2007.
-\bibitem{hpss} P.-S.~Huang et al. Singing-voice separation from monaural recordings using robust PCA. \emph{ICASSP}, 2012.
-\bibitem{aharon2006ksvd} M.~Aharon, M.~Elad, A.~Bruckstein. K-SVD. \emph{IEEE TSP}, 54(11), 2006.
-\bibitem{wright2009src} J.~Wright et al. Robust face recognition via sparse representation. \emph{IEEE TPAMI}, 31(2), 2009.
-\bibitem{spleeter} R.~Hennequin et al. Spleeter. \emph{JOSS}, 5(50), 2020.
-\bibitem{openunmix} F.-R.~St\"oter et al. Open-Unmix. \emph{JOSS}, 4(41), 2019.
-\bibitem{gregor2010lista} K.~Gregor, Y.~LeCun. Learning fast approximations of sparse coding. \emph{ICML}, 2010.
-\bibitem{sun2018scn} X.~Sun, N.~Nasrabadi, T.~Tran. Supervised multilayer sparse coding networks. arXiv:1701.08349, 2017.
-\bibitem{candes2011rpca} E.~Cand\`es, X.~Li, Y.~Ma, J.~Wright. Robust principal component analysis? \emph{JACM}, 58(3), 2011.
-\bibitem{lerouxsdr} J.~Le~Roux et al. SDR -- half-baked or well done? \emph{ICASSP}, 2019.
-\bibitem{tropp2006somp} J.~Tropp. Algorithms for simultaneous sparse approximation. Part I. \emph{Signal Processing}, 86(3), 2006.
-\end{thebibliography}
-}
+\section*{Reproducibility}
+All code, trained dictionaries and network weights, the evaluation harness, and
+curated before/after audio are available at
+\url{https://github.com/takakhoo/ENGS109_Final_Project}.
+
+\bibliographystyle{icml2025}
+\bibliography{references}
 
 \end{document}
