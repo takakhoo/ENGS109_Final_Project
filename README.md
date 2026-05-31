@@ -36,8 +36,9 @@ The spectrogram magnitude of a musical source is approximately sparse in a sourc
 
 ### Deliverables
 
-- [`paper/paper.pdf`](paper/paper.pdf) — 8-page paper (official ICML 2025 format)
+- [`paper/paper.pdf`](paper/paper.pdf) — 10-page paper (official ICML 2025 format)
 - [`poster/poster.pdf`](poster/poster.pdf) — A0 landscape conference poster
+- [`walkthrough/walkthrough.pdf`](walkthrough/walkthrough.pdf) — long plain-English presenter's companion (analogies, scripts, every figure/table broken down)
 - [`audio_examples/`](audio_examples/) — curated before/after WAVs, all stages
 - [`figures/`](figures/) — all paper figures, regenerable from artifacts
 
