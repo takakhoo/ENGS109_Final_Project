@@ -1,5 +1,5 @@
-# Sparse, Low-Rank, and Deep
-### A Unified Compressed-Sensing Framework for Music Source Separation
+# Unmixing the Music
+### Sparse, Low-Rank, and Deep: A Compressed-Sensing Approach to Music Source Separation
 
 **ENGS 109: High-Dimensional Sensing and Learning — Final Project**
 **Taka Khoo · Thayer School of Engineering, Dartmouth College**

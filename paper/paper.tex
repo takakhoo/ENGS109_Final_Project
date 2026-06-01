@@ -55,13 +55,13 @@
 \newcommand{\ABLrpcaA}{$-3.9$} \newcommand{\ABLrpcaB}{$-3.6$}
 \newcommand{\ABLrpcaC}{$-3.2$} \newcommand{\ABLrpcaD}{$\mathbf{-2.3}$}
 
-\icmltitlerunning{Compressed-Sensing Music Source Separation}
+\icmltitlerunning{Unmixing the Music}
 
 \begin{document}
 
 \twocolumn[
-\icmltitle{Sparse, Low-Rank, and Deep: A Unified Compressed-Sensing\\
-Framework for Music Source Separation}
+\icmltitle{Unmixing the Music: Sparse, Low-Rank, and Deep\\
+Compressed-Sensing Approaches to Music Source Separation}
 
 \icmlsetsymbol{equal}{*}
 \begin{icmlauthorlist}
@@ -122,13 +122,22 @@ This paper takes the position that these traditions are two ends of a single
 axis. The spectrogram magnitude of a musical source is approximately sparse in a
 source-adapted basis (a vocal frame activates a few formant atoms; a percussive
 frame is sparse in time) and the sustained harmonic content of an accompaniment is
-approximately low-rank. Both properties are exactly the structural assumptions of
-compressed sensing and sparse coding~\cite{donoho2006cs,elad2010sparse}. Deep
-masking networks, in turn, can be read as unrolled sparse-recovery
-solvers with learned operators~\cite{gregor2010lista,monga2021unrolling}. Placing
-the classical and deep methods on one short-time Fourier transform (STFT) front
-end therefore lets us compare them as points on a structure-recovery spectrum
-rather than as unrelated systems.
+approximately low-rank. These two structures are not separate assumptions but two
+sides of the same coin: the rank of a matrix is the $\ell_0$ norm of its singular
+spectrum, and the nuclear norm is the corresponding $\ell_1$ relaxation, so
+``few active atoms'' and ``few active singular vectors'' are the same prior applied
+to a vector and to a matrix. Both are exactly the structural assumptions of
+compressed sensing and sparse coding~\cite{donoho2006cs,elad2010sparse}. The
+recovery problem is in every case the underdetermined system $\yv=\A\xv$ with a
+sparse code: the classical half of the subject fixes the dictionary $\A$ and
+recovers the code, while dictionary learning, K-SVD, and NMF instead \emph{learn}
+$\A$ from data. Deep masking networks sit at the learned end of this same
+continuum: a sparse coding network is, in a precise sense, a learned
+autoencoder~\cite{gregor2010lista,papyan2017cnncsc}, an unrolled sparse-recovery
+solver whose operators are trained by backpropagation~\cite{monga2021unrolling}.
+Placing the classical and deep methods on one short-time Fourier transform (STFT)
+front end therefore lets us compare them as points on a single structure-recovery
+spectrum rather than as unrelated systems.
 
 \paragraph{Contributions.} (i) We formalize vocal/accompaniment separation as a
 structured-recovery problem and instantiate four separators that share a front end
@@ -281,13 +290,40 @@ random~\cite{candes2011rpca,candes2009matrixcompletion}.
 
 \section{Method}
 \label{sec:method}
+
+\begin{figure}[t]
+\centering
+\resizebox{\linewidth}{!}{%
+\begin{tikzpicture}[font=\footnotesize,
+  m/.style={draw,rounded corners=2pt,align=center,minimum height=7mm,
+            fill=blue!6,line width=0.4pt,inner sep=3pt},
+  ours/.style={m,fill=orange!14,draw=orange!70,line width=0.8pt}]
+\draw[-{Stealth[length=2mm]},line width=0.8pt] (-0.2,0)--(11.6,0);
+\node[anchor=north] at (5.7,-0.15) {\itshape increasing structure learned from data $\longrightarrow$};
+\node[m] (a) at (1.1,0.95) {Robust PCA\\\scriptsize fixed $\A$};
+\node[m] (b) at (4.0,0.95) {NMF\\\scriptsize learn $\A$ (unsup.)};
+\node[m] (c) at (6.9,0.95) {K-SVD$+$SRC\\\scriptsize learn $\A$ (unsup.)};
+\node[ours] (d) at (10.1,0.95) {Deep coder\\\scriptsize learn $\A$ end-to-end};
+\foreach \n in {a,b,c,d}{\draw[gray,line width=0.3pt] (\n.south)--(\n.south|-0,0);}
+\node[anchor=south,gray] at (1.1,-0.95) {\scriptsize fix $\A$, recover code};
+\node[anchor=south,gray] at (10.1,-0.95) {\scriptsize learned autoencoder};
+\end{tikzpicture}}
+\caption{The four separators as points on one structure-recovery spectrum. All solve
+the same underdetermined system $\yv=\A\xv$ with a sparse code; they differ only in
+how much of the dictionary $\A$ is learned from data, from a fixed convex split to a
+fully trained unrolled solver.}
+\label{fig:spectrum}
+\end{figure}
+
 \paragraph{Front end.}
 Let $y(t)$ be a mono mixture. Its STFT is $\Y=\STFT(y)\in\mathbb C^{F\times T}$
 with magnitude $\M=\lvert\Y\rvert$ and phase $\angle\Y$. Every separator produces a
 soft mask $\M_c\in[0,1]^{F\times T}$ per source $c$, and resynthesizes
 $\hat y_c=\STFT^{-1}(\M_c\odot\Y)$ using the mixture phase. Given non-negative
 source magnitude estimates $\widehat\M_c$, we use Wiener-style masks
-$\M_c=\widehat\M_c^{2}/\sum_k\widehat\M_k^{2}$.
+$\M_c=\widehat\M_c^{2}/\sum_k\widehat\M_k^{2}$. \Cref{fig:spectrum} places the four
+methods of this section on the structure-recovery spectrum the introduction
+describes.
 
 \begin{figure}[t]
 \centering
@@ -359,7 +395,12 @@ $\bm Z=\bm U\bm\Sigma\bm V^\top$, the iteration is
 \end{align}
 with $\mu$ increased geometrically. The low-rank $\X$ is the accompaniment estimate
 and the sparse $\Ev$ the vocal proxy; this is principal component pursuit applied to
-singing-voice separation~\cite{huang2012rpca}. The method is training-free.
+singing-voice separation~\cite{huang2012rpca}. The intuition is the same one that
+separates a static background from moving foreground in surveillance video: the
+repeating accompaniment is the low-rank ``background'' of the spectrogram, and the
+voice, like a scratch on a CD or a rare gross corruption, is the sparse part that
+classical PCA would smear but principal component pursuit isolates. The method is
+training-free.
 
 \subsection{Supervised NMF}
 \label{sec:nmf}
@@ -411,8 +452,39 @@ separator's reliability to a measurable property of the learned dictionary
 \subsection{Deep sparse coding network}
 \label{sec:scn}
 Our learned separator predicts the vocal mask by unrolling a non-negative sparse
-solver and learning its dictionaries end-to-end. For an input frame $\xv\in\R^F$ a
+solver and learning its dictionaries end-to-end. The architecture makes the
+``learned autoencoder'' reading of sparse coding literal: each module first lifts a
+frame into an over-complete sparse code with a fat dictionary, then compresses that
+code with a tall dictionary, an expand-then-reduce hourglass whose bottleneck is a
+sparse representation (\cref{fig:cmod}). For an input frame $\xv\in\R^F$ a
 composite module computes two stacked non-negative elastic-net codes,
+
+\begin{figure}[t]
+\centering
+\resizebox{\linewidth}{!}{%
+\begin{tikzpicture}[font=\footnotesize,
+  io/.style={draw,rounded corners=2pt,align=center,minimum height=9mm,
+             minimum width=12mm,fill=gray!8,line width=0.4pt,inner sep=3pt},
+  tallb/.style={draw,rounded corners=1pt,align=center,minimum width=10mm,
+                minimum height=15mm,fill=purple!12,line width=0.5pt,inner sep=3pt},
+  shortb/.style={draw,rounded corners=1pt,align=center,minimum width=10mm,
+                 minimum height=8mm,fill=orange!14,line width=0.5pt,inner sep=3pt},
+  lbl/.style={fill=white,inner sep=1.5pt,font=\scriptsize,align=center},
+  arr/.style={-{Stealth[length=2mm]},line width=0.5pt}]
+\node[io] (x) {$\xv$\\\scriptsize$\R^F$};
+\node[tallb,right=22mm of x] (a1) {$\av^{(1)}$\\\scriptsize$\R^{n_u}$};
+\node[shortb,right=22mm of a1] (a2) {$\av^{(2)}$\\\scriptsize$\R^{n_d}$};
+\node[io,right=18mm of a2] (out) {next\\module};
+\draw[arr] (x)--(a1); \node[lbl] at ($(x)!0.5!(a1)$){fat $\D^{(1)}$\\(upsample)};
+\draw[arr] (a1)--(a2); \node[lbl] at ($(a1)!0.5!(a2)$){tall $\D^{(2)}$\\(downsample)};
+\draw[arr] (a2)--(out);
+\end{tikzpicture}}
+\caption{One composite module. A fat dictionary lifts the frame to a tall
+over-complete sparse code $\av^{(1)}$; a tall dictionary compresses it to a short
+code $\av^{(2)}$. Stacking $L_m$ of these and a sigmoid head emits the mask. The
+expand-then-reduce shape is the autoencoder hourglass with a sparse bottleneck.}
+\label{fig:cmod}
+\end{figure}
 \begin{align}
 \av^{(1)}&=\argmin_{\av\ge0}\tfrac12\norm{\xv-\D^{(1)}\av}_2^2
 +\lambda_1\norm{\av}_1+\tfrac{\lambda_2}2\norm{\av}_2^2,\label{eq:scn1}\\
