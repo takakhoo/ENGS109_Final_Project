@@ -41,3 +41,8 @@ poster/build/
 # OS
 .DS_Store
 Icon?
+
+# submission build artifacts
+_submission/
+*.zip
+Khoo_ENGS109_Poster.pdf
