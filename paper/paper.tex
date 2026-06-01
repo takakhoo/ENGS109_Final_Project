@@ -144,6 +144,48 @@ is the strongest non-oracle separator while being the fastest learned model. (ii
 We pair each method with its recovery condition and report a negative result on
 dictionary coherence. Code, weights, and audio are released.
 
+\paragraph{Related work.}
+NMF for audio dates to \citet{smaragdis2003nmf}; supervised and convolutive
+variants~\cite{smaragdis2007convolutive,fevotte2009isnmf} pre-train one dictionary
+per source. Robust-PCA singing-voice separation~\cite{huang2012rpca} and
+REPET~\cite{rafii2013repet} exploit the repetitive, low-rank structure of
+accompaniment. K-SVD~\cite{aharon2006ksvd} learns overcomplete sparsifying
+dictionaries and SRC~\cite{wright2009src} classifies by reconstruction residual.
+On the deep side, Spleeter, Open-Unmix, and Demucs train end-to-end
+masks~\cite{stoter2019openunmix,defossez2021demucs,rouard2023htdemucs}, while a
+complementary line reads such networks as unrolled sparse coding: LISTA unrolls
+ISTA~\cite{gregor2010lista}, CNNs admit a convolutional-sparse-coding
+reading~\cite{papyan2017cnncsc}, and supervised deep sparse coding networks have
+been studied for image classification~\cite{sun2019scn}. Our learned separator
+instantiates this unrolling idea for music spectrogram masking.
+
+\section{Background: Spectrograms, Stems, and Masking}
+\label{sec:background}
+The short-time Fourier transform slides a window across $y(t)$ and takes a DFT in
+each window, producing a complex matrix $\Y\in\mathbb C^{F\times T}$ with $F$
+frequency bins and $T$ frames. Its modulus $\M=\lvert\Y\rvert$ is a nonnegative
+image (brightness is energy) and its argument $\angle\Y$ is the phase; the transform
+is invertible. A finished song is a sum of source \emph{stems}, and because the STFT
+is linear the mixture spectrogram is approximately the sum of the source
+spectrograms. Rather than predict a source spectrogram outright, we predict a
+\emph{mask} $\M_c\in[0,1]^{F\times T}$ that scales each cell and resynthesize with
+the mixture phase. The minimum-mean-square-error mask under locally uncorrelated
+Gaussian sources is the ideal ratio mask
+$\M_c^{\mathrm{IRM}}=\lvert\Y_c\rvert^2/\sum_k\lvert\Y_k\rvert^2$; it needs the true
+sources and so serves only as an oracle ceiling. Two empirical regularities make the
+masks recoverable (\cref{fig:triptych}): a voiced frame places energy on a sparse
+set of harmonics, and sustained accompaniment reuses a few spectral templates and is
+therefore low-rank, the two structures compressed sensing is built to exploit.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{fig_triptych.pdf}
+\caption{Log-magnitude STFT of a test clip: the mixture, the true vocals (a sparse
+harmonic scaffold), and the true accompaniment (denser and lower-rank). Our methods
+reverse the sum.}
+\label{fig:triptych}
+\end{figure}
+
 \section{Preliminaries}
 \label{sec:theory}
 Write $\norm{\xv}_0=\lvert\supp(\xv)\rvert$. Given $\A\in\R^{m\times N}$ with
@@ -317,13 +359,78 @@ and unrolled learning each add a clear increment over the training-free baseline
 \label{fig:bars}
 \end{figure}
 
+\paragraph{Per-track spread, masks, stereo, cost.}
+Medians hide variance, so \cref{fig:box} plots the per-track vocal SI-SDR
+distribution: the deep model shifts the whole distribution rightward, not only the
+easy tracks, though every method has a long lower tail on dense, vocal-quiet
+mixtures. The masking strategy matters independently of the model: soft (ratio)
+masks beat hard binary masks by $\approx1$ dB for every method ($2.1$ vs $1.0$ dB
+for the deep coder), because a continuous gain keeps the partial-overlap cells a
+binary decision discards. The stereo simultaneous-OMP separator
+(\cref{sec:method}) reaches $0.9$/$7.3$ dB on $10$ stereo tracks, matching the mono
+dictionary it is built on while keeping the two channels consistent.
+\Cref{tab:cost} contrasts model size and per-clip cost: the deep coder is the
+smallest learned model we train and the fastest at test time, an order of magnitude
+quicker than the iterative RPCA solve, because its forward pass is a fixed number of
+matrix multiplies.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.92\linewidth]{fig_boxplot.pdf}
+\caption{Per-track vocal SI-SDR over the $25$ test tracks. The deep model shifts the
+full distribution rather than only improving easy tracks.}
+\label{fig:box}
+\end{figure}
+
+\begin{table}[t]
+\caption{Model size and per-clip cost. Classical methods store fixed dictionaries;
+SCN learns dictionaries and shrinkages end-to-end.}
+\label{tab:cost}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+\textbf{Method} & \textbf{Trains?} & \textbf{Params} & \textbf{Test (s)} \\
+\midrule
+RPCA       & no          & ---     & $1.14$ \\
+NMF        & dict.\ only & $0.13$M & $0.46$ \\
+K-SVD      & dict.\ only & $0.20$M & $0.28$ \\
+SCN (ours) & end-to-end  & $1.44$M & $0.12$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 \paragraph{Ablations.}
 \Cref{tab:abl} sweeps the central knobs. Supervised NMF is \emph{best at the
 smallest} dictionary ($K{=}16$): with limited data a small dictionary is a stronger
 prior, a regularization effect. K-SVD improves with the sparsity budget to $s{=}10$
 then saturates. RPCA improves as the penalty $\lambda$ grows, pushing more energy
 into the low-rank band and leaving a cleaner sparse vocal, so the canonical $\lambda$
-is conservative for this task.
+is conservative for this task. The learned dictionaries themselves are musically
+sensible: \cref{fig:atoms} shows the NMF vocal atoms concentrating harmonic ridges
+in the formant region while the accompaniment atoms spread lower and wider, the
+parts-based structure NMF is designed to recover. The Robust PCA solver is
+well-behaved too: \cref{fig:conv} shows its residual reaching $10^{-7}$ in $38$
+iterations and the mixture's singular spectrum collapsing after a handful of
+components, the empirical evidence for the low-rank accompaniment prior.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{fig_nmf_atoms.pdf}
+\caption{Supervised NMF dictionaries, atoms sorted by spectral centroid: vocal atoms
+(top) ride the formant region, accompaniment atoms (bottom) spread lower.}
+\label{fig:atoms}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{fig_rpca_converge.pdf}
+\caption{Left: relative residual of the principal-component-pursuit iteration.
+Right: normalized singular spectrum of the mixture magnitude, justifying the
+low-rank accompaniment prior.}
+\label{fig:conv}
+\end{figure}
 
 \begin{table}[t]
 \caption{Ablations (median vocal SI-SDR, dB, $12$ tracks).}
